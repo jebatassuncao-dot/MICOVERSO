@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Aplicativo educacional sobre fungos amazônicos para o 1º ano do Ensino Médio.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Micoverso">
+<style>:root{padding-top:env(safe-area-inset-top,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Micoverso Amazônico</title>
+<meta name="theme-color" content="#1E6A5A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: app de coluna única tipo celular — cabeçalho fino, conteúdo rolável, barra de abas inferior; encontros ligados por uma "hifa" */
+:root{
+  --bg:#EDEFE4; --surface:#F9FAF3; --surface2:#E1E6D3; --ink:#2A2117; --muted:#625C4D; --line:#CBD1BB;
+  --accent:#1E6A5A; --accent-ink:#FFFFFF; --accent-soft:#D3E6DE; --spore:#C7531F; --ok:#2B7A4B; --bad:#B0352A; --hint:#8A5A00; --hint-bg:#F6E9C9;
+  --f-display:"Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#16120E; --surface:#211B15; --surface2:#2C251D; --ink:#EDE8D9; --muted:#A99F8B; --line:#3B3329;
+  --accent:#6FD3B6; --accent-ink:#0F2520; --accent-soft:#1F3A33; --spore:#F08A4B; --ok:#6CCB8C; --bad:#EE7B6C; --hint:#F2C66B; --hint-bg:#3A2F17; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#16120E; --surface:#211B15; --surface2:#2C251D; --ink:#EDE8D9; --muted:#A99F8B; --line:#3B3329;
+  --accent:#6FD3B6; --accent-ink:#0F2520; --accent-soft:#1F3A33; --spore:#F08A4B; --ok:#6CCB8C; --bad:#EE7B6C; --hint:#F2C66B; --hint-bg:#3A2F17; color-scheme:dark }
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;overflow:hidden}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.15;text-wrap:balance;margin:0}
+p{margin:0}
+.app{height:100%;display:flex;flex-direction:column;max-width:600px;margin:0 auto;background:var(--bg);position:relative}
+.top{display:flex;align-items:center;gap:10px;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:var(--bg)}
+.brand{display:flex;flex-direction:column;flex:1;min-width:0}
+.brand b{font-family:var(--f-display);font-weight:800;font-size:1.05rem;letter-spacing:.02em}
+.brand span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.09em}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:700;font-variant-numeric:tabular-nums}
+.pill svg{width:16px;height:16px}
+.iconbtn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center}
+.iconbtn svg{width:20px;height:20px}
+main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-block:18px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);background:var(--surface);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.tabs button{background:none;border:0;padding:9px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:.72rem;color:var(--muted)}
+.tabs button svg{width:24px;height:24px}
+.tabs button[aria-current="page"]{color:var(--accent);font-weight:700}
+.stack{display:flex;flex-direction:column;gap:16px}
+.eyebrow{font-size:.74rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700}
+.lead{color:var(--muted)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.btn{border:0;border-radius:12px;padding:12px 18px;font-weight:700;background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+input[type=text],textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+label{font-weight:700;font-size:.9rem}
+
+/* Trilha */
+.hello{display:flex;gap:14px;align-items:center}
+.hello .av{width:64px;height:64px;flex:none}
+.prog{height:10px;border-radius:999px;background:var(--surface2);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .4s}
+.trail{position:relative;display:flex;flex-direction:column;gap:14px;padding-left:4px}
+.trail::before{content:"";position:absolute;left:27px;top:24px;bottom:24px;border-left:3px dotted var(--line)}
+.node{position:relative;display:flex;gap:14px;align-items:flex-start;text-align:left;background:none;border:0;padding:0;width:100%}
+.node .num{flex:none;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:1.2rem;background:var(--surface);border:2px solid var(--line);z-index:1}
+.node.done .num{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.node.next .num{border-color:var(--spore);color:var(--spore)}
+.node .info{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.node.next .info{border-color:var(--spore)}
+.node h3{font-size:1.05rem}
+.node .meta{font-size:.82rem;color:var(--muted);margin-top:2px}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--muted)}
+.tag.ok{background:var(--accent-soft);color:var(--accent)}
+.tag.go{background:var(--hint-bg);color:var(--spore)}
+
+/* Sheet (missão) */
+.sheet{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;z-index:20}
+.sheet-head{display:flex;align-items:center;gap:10px;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line)}
+.sheet-head .t{flex:1;min-width:0}
+.sheet-head .t b{display:block;font-family:var(--f-display);font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sheet-head .t small{color:var(--muted)}
+.steps{display:flex;gap:4px;margin-top:6px}
+.steps i{flex:1;height:4px;border-radius:2px;background:var(--surface2)}
+.steps i.on{background:var(--accent)}
+.sheet-body{flex:1;overflow-y:auto;padding-block:20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sheet-foot{display:flex;gap:10px;padding-block:12px calc(12px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-top:1px solid var(--line);background:var(--surface)}
+.sheet-foot .btn{flex:1}
+.narr{display:flex;flex-direction:column;gap:16px}
+.speech{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:18px 18px 18px 4px;padding:16px 18px;font-size:1.08rem;line-height:1.6}
+.guide{display:flex;gap:12px;align-items:center}
+.guide svg{width:56px;height:56px;flex:none}
+.concept h2{font-size:1.6rem;margin-bottom:10px}
+.concept .art{width:120px;height:120px;margin-bottom:6px}
+.concept p{font-size:1.06rem;max-width:62ch}
+.term{background:var(--accent-soft);color:var(--accent);font-weight:700;padding:0 4px;border-radius:4px}
+.lap{border:2px dashed var(--spore);border-radius:var(--r);padding:16px;background:var(--surface)}
+.lap h3{color:var(--spore);font-size:1.15rem;margin-bottom:6px}
+.lap ul{margin:8px 0 0;padding-left:20px}
+
+/* Quiz */
+.q{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px}
+.q h3{font-family:var(--f-body);font-size:1.05rem;font-weight:700}
+.opt{display:block;width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+.opt.right{border-color:var(--ok);background:var(--accent-soft);font-weight:700}
+.opt.wrong{border-color:var(--bad);text-decoration:line-through;color:var(--muted)}
+.hintbox{background:var(--hint-bg);color:var(--ink);border-radius:10px;padding:10px 12px;font-size:.95rem}
+.hintbox b{color:var(--hint)}
+.expl{font-size:.95rem;color:var(--muted)}
+.earn{font-weight:700;color:var(--spore)}
+
+/* Micoteca */
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 14px;font-size:.88rem}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.spc{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;text-align:left;display:flex;flex-direction:column;gap:6px}
+.spc svg{width:100%;height:auto;aspect-ratio:1;max-width:100%}
+.spc b{font-family:var(--f-display);font-size:1rem;line-height:1.2}
+.spc i{font-size:.82rem;color:var(--muted)}
+.ficha .art{width:160px;height:160px;margin:0 auto}
+.ficha dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}
+.ficha dt{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;padding-top:2px}
+.ficha dd{margin:0;min-width:0}
+
+/* Classificar */
+.card-big{background:var(--surface);border:2px solid var(--ink);border-radius:18px;padding:22px;text-align:center;font-family:var(--f-display);font-size:1.4rem;font-weight:800}
+.bins{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.bin{border:2px solid var(--line);background:var(--surface);border-radius:14px;padding:16px 10px;font-weight:700}
+.bin:hover{border-color:var(--accent)}
+.fb{border-radius:12px;padding:12px 14px}
+.fb.ok{background:var(--accent-soft)}
+.fb.no{background:var(--hint-bg)}
+
+/* Mapa */
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface2);border-radius:12px;padding:4px;gap:4px}
+.seg button{border:0;background:none;border-radius:9px;padding:9px;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink)}
+.prop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.prop .c{background:var(--accent-soft);color:var(--accent);font-weight:700;padding:3px 9px;border-radius:8px}
+.prop .l{font-style:italic;color:var(--muted)}
+.prop .x{margin-left:auto;background:none;border:0;color:var(--muted);font-size:1.2rem;line-height:1}
+.mapwrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.stat b{display:block;font-family:var(--f-display);font-size:1.7rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.82rem;color:var(--muted)}
+
+/* MicoIA */
+.chat{display:flex;flex-direction:column;gap:10px}
+.msg{max-width:88%;padding:11px 14px;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.u{align-self:flex-end;background:var(--accent);color:var(--accent-ink);border-bottom-right-radius:4px}
+.msg.a{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:4px}
+.ask{display:flex;gap:8px}
+.ask input{flex:1;min-width:0}
+.note{font-size:.84rem;color:var(--muted)}
+.badges{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.badge{text-align:center;padding:10px 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:.8rem}
+.badge.off{opacity:.4}
+.badge svg{width:40px;height:40px}
+.confirm{background:var(--hint-bg);border-radius:12px;padding:12px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+.pop{animation:pop .35s ease}
+@keyframes pop{0%{transform:scale(.96);opacity:.4}100%{transform:none;opacity:1}}
+</style>
+
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand"><b>MICOVERSO AMAZÔNICO</b><span>Fungos da nossa floresta</span></div>
+    <span class="pill" id="sporePill" title="Esporos coletados"></span>
+    <button class="iconbtn" id="profBtn" aria-label="Perfil e sobre o aplicativo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button>
+  </header>
+  <main id="view"></main>
+  <nav class="tabs" id="tabs" aria-label="Seções">
+    <button data-tab="trilha"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8 17c6 0 2-9 8-10" stroke-dasharray="2 2.5"/></svg>Trilha</button>
+    <button data-tab="micoteca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 6 0 0 1 18 0z"/><path d="M10 12v6a2 2 0 0 0 4 0v-6"/></svg>Micoteca</button>
+    <button data-tab="desafios"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg>Desafios</button>
+    <button data-tab="micoia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5M12 14.5h.01" stroke-linecap="round"/></svg>Dúvidas</button>
+    <button data-tab="mapa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="5" rx="1"/><rect x="14" y="16" width="7" height="5" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><path d="M10 5.5h4M17.5 8v8"/></svg>Mapa</button>
+  </nav>
+  <section class="sheet" id="sheet" hidden></section>
+</div>
+
+<script>
+/* ============ DADOS ============ */
+const MISSIONS = [
+ {id:"m1", title:"Que ser é esse?", sub:"O Reino Fungi", badge:"Hifa",
+  narr:"Choveu forte à tarde em Salvaterra. No quintal, sobre um tronco caído de mangueira, apareceram umas orelhinhas alaranjadas. Sua avó olha e diz: “é orelha-de-pau, nasce depois da chuva”. Mas afinal… isso é planta, é bicho ou é outra coisa? Eu sou a Micélia, e vou ser sua guia no Micoverso Amazônico. Bora descobrir?",
+  cards:[
+   {art:"orelha", h:"Um reino só deles", p:"Fungos formam o <span class='term'>Reino Fungi</span>, separado das plantas e dos animais. Estudos de DNA mostram que os fungos são parentes mais próximos dos animais do que das plantas."},
+   {art:"enzima", h:"Comem por fora", p:"Fungos não fazem fotossíntese: são <span class='term'>heterotróficos</span>. Eles liberam enzimas no ambiente, digerem a matéria ali mesmo e depois <span class='term'>absorvem</span> os nutrientes."},
+   {art:"quitina", h:"Parede de quitina", p:"Suas células têm parede celular de <span class='term'>quitina</span>, o mesmo material da casca do caranguejo e do corpo dos insetos. Guardam energia como <span class='term'>glicogênio</span>, igual a nós."},
+   {art:"hifa", h:"Hifas e micélio", p:"O corpo da maioria dos fungos é feito de filamentos microscópicos, as <span class='term'>hifas</span>. O conjunto de hifas forma o <span class='term'>micélio</span>, uma rede que cresce escondida no solo, na madeira e nas folhas."},
+   {art:"levedura", h:"Uma célula ou muitas", p:"As <span class='term'>leveduras</span>, como o fermento de pão, são unicelulares. Bolores, orelhas-de-pau e cogumelos são pluricelulares."}
+  ],
+  lap:{t:"Dobra 1 · Que reino é esse?", items:["Cole a etiqueta “Reino Fungi” na capa da dobra.","Escreva 3 diferenças entre fungos e plantas.","Desenhe uma hifa e um micélio e escreva o nome de cada um."]},
+  map:"inicial"},
+ {id:"m2", title:"Nuvem de esporos", sub:"Estrutura e reprodução", badge:"Esporo",
+  narr:"Você chuta sem querer um cogumelo velho no caminho da escola e sobe uma fumacinha marrom. Não é poeira, não! São milhões de esporos saindo para viajar com o vento. Cada um pode virar um fungo novo. Vamos ver como isso funciona?",
+  cards:[
+   {art:"cogumelo", h:"O cogumelo é o “fruto”", p:"O que a gente vê sobre o tronco é o <span class='term'>corpo de frutificação</span>, a parte que produz esporos. Ele tem <span class='term'>píleo</span> (chapéu), <span class='term'>lamelas</span> ou poros embaixo e <span class='term'>estipe</span> (o “pé”). O fungo de verdade continua no micélio."},
+   {art:"esporo", h:"Esporos viajantes", p:"<span class='term'>Esporos</span> são microscópicos e leves. Vento, água da chuva e animais carregam esses esporos. Ao cair num lugar úmido e com alimento, o esporo germina e forma novas hifas."},
+   {art:"levedura", h:"Reprodução assexuada", p:"Sem mistura de material genético: esporos formados por mitose, <span class='term'>brotamento</span> nas leveduras (uma célula nova “brota” da mãe) e <span class='term'>fragmentação</span> de pedaços de hifa."},
+   {art:"hifa", h:"Reprodução sexuada", p:"Hifas de dois fungos compatíveis se fundem. Depois ocorre meiose e se formam esporos com nova combinação de genes. Isso aumenta a variedade da espécie."}
+  ],
+  lap:{t:"Bolso 2 · Ciclo de vida", items:["Desenhe em sequência: esporo → hifa → micélio → corpo de frutificação.","Prática: deixe o chapéu de um cogumelo sobre papel por uma noite e cole a impressão de esporos (lave as mãos depois)."]}},
+ {id:"m3", title:"Três potes na mesa", sub:"Diversidade dos fungos", badge:"Basídio",
+  narr:"A professora trouxe três potes para a sala: um pão com manchas verdes, um pacotinho de fermento e uma orelha-de-pau. Ela pergunta: “Quem aqui é fungo?”. A turma se divide. E você, o que acha?",
+  cards:[
+   {art:"levedura", h:"Leveduras", p:"Fungos unicelulares. A <span class='term'>Saccharomyces cerevisiae</span>, o fermento, faz <span class='term'>fermentação</span>: transforma açúcar em gás carbônico (que faz o pão crescer) e álcool."},
+   {art:"bolor", h:"Bolores", p:"Fungos de hifas que formam manchas aveludadas em pão, frutas e paredes úmidas. O mofo preto do pão (<i>Rhizopus</i>) e o verde-azulado (<i>Penicillium</i>) são exemplos."},
+   {art:"orelha", h:"Cogumelos e orelhas-de-pau", p:"Pertencem aos <span class='term'>basidiomicetos</span>: formam esporos em células chamadas basídios. São os fungos mais fáceis de ver na mata."},
+   {art:"taca", h:"Fungos de taça", p:"Os <span class='term'>ascomicetos</span> formam esporos dentro de “saquinhos” (ascos). Na Amazônia, a taça-peluda (<i>Cookeina</i>) cresce em galhos caídos. Leveduras e <i>Penicillium</i> também são ascomicetos."},
+   {art:"liquen", h:"Liquens", p:"Um <span class='term'>líquen</span> é a parceria entre um fungo e uma alga ou cianobactéria. A alga faz fotossíntese; o fungo dá abrigo e umidade. Juntos, vivem em troncos e pedras."}
+  ],
+  lap:{t:"Aba 3 · Formas de vida", items:["Recorte as etiquetas: levedura, bolor, cogumelo, orelha-de-pau, líquen.","Cole cada uma no grupo certo e escreva um exemplo do seu dia a dia."]}},
+ {id:"m4", title:"A teia escondida", sub:"Fungos na floresta amazônica", badge:"Micorriza",
+  narr:"Já pensou para onde vão as toneladas de folhas que caem na floresta todo ano? Se ninguém desse conta delas, a mata ficaria soterrada. Os fungos trabalham dia e noite nisso, e ainda fazem parcerias com plantas e até com formigas.",
+  cards:[
+   {art:"orelha", h:"Os recicladores", p:"Os <span class='term'>decompositores</span> quebram folhas, galhos e troncos mortos e devolvem os nutrientes ao solo. O solo amazônico é pobre; a floresta se mantém graças a essa reciclagem rápida."},
+   {art:"micorriza", h:"Micorrizas", p:"<span class='term'>Micorriza</span> (mico = fungo, riza = raiz) é a associação entre fungo e raiz. O fungo ajuda a planta a absorver água e fósforo; a planta dá açúcares ao fungo. A maioria das plantas tem micorrizas."},
+   {art:"formiga", h:"Formigas agricultoras", p:"As <span class='term'>saúvas</span> cortam folhas para alimentar um fungo (<i>Leucoagaricus gongylophorus</i>) que elas cultivam em jardins subterrâneos. O fungo vira comida para a colônia."},
+   {art:"zumbi", h:"O fungo-zumbi", p:"Fungos do gênero <i>Ophiocordyceps</i> infectam formigas, alteram seu comportamento e depois crescem da cabeça delas para soltar esporos. É um exemplo de <span class='term'>parasitismo</span>."},
+   {art:"luz", h:"Luz na mata", p:"Alguns fungos, como espécies de <i>Mycena</i>, brilham no escuro: é a <span class='term'>bioluminescência</span>, uma reação química que produz luz verde."}
+  ],
+  lap:{t:"Bolso 4 · Teia da floresta", items:["Desenhe uma árvore com raízes e ligue-a ao micélio no solo.","Escreva um exemplo de fungo decompositor, um mutualista e um parasita."]}},
+ {id:"m5", title:"Amigos ou vilões?", sub:"Fungos e as pessoas", badge:"Penicillium",
+  narr:"O Pará é um dos maiores produtores de cacau do Brasil. Mas um fungo nativo da Amazônia, causador da vassoura-de-bruxa, já destruiu plantações inteiras. Ao mesmo tempo, outro fungo deu origem ao primeiro antibiótico. Afinal, fungos são amigos ou vilões?",
+  cards:[
+   {art:"levedura", h:"Na mesa", p:"Leveduras fazem pão e bebidas fermentadas. Muitos cogumelos são comestíveis: os Yanomami, por exemplo, conhecem e comem dezenas de espécies e registraram esse saber em uma enciclopédia própria."},
+   {art:"bolor", h:"Na farmácia", p:"Em 1928, Alexander Fleming observou que um bolor do gênero <i>Penicillium</i> impedia o crescimento de bactérias. Daí veio a <span class='term'>penicilina</span>, o primeiro antibiótico."},
+   {art:"vassoura", h:"Na roça", p:"A <span class='term'>vassoura-de-bruxa</span>, causada por <i>Moniliophthora perniciosa</i>, deforma ramos e frutos do cacaueiro. É um problema sério para agricultores do Pará e da Bahia."},
+   {art:"pele", h:"Na pele", p:"Clima quente e úmido favorece <span class='term'>micoses</span>, como a frieira e o “pano branco”. Secar bem os pés e não dividir toalhas ajuda a prevenir."},
+   {art:"alerta", h:"Atenção!", p:"Nunca coma cogumelo do mato sem identificação feita por especialista. Cor, cheiro ou cozimento <b>não</b> garantem que ele é seguro. Alguns são muito tóxicos."},
+   {art:"saber", h:"Saberes da comunidade", p:"A <span class='term'>etnomicologia</span> estuda o que os povos sabem sobre fungos: nomes locais, usos e crenças. Pergunte em casa: quais fungos sua família conhece?"}
+  ],
+  lap:{t:"Aba 5 · Amigos ou vilões?", items:["Faça duas colunas: “Ajuda” e “Atrapalha”, com dois exemplos em cada.","Entreviste alguém da família sobre fungos e cole a resposta no bolso."]}},
+ {id:"m6", title:"O micélio completo", sub:"Síntese e mapa conceitual final", badge:"Micélio",
+  narr:"Você percorreu toda a trilha! Agora é hora de juntar as hifas do que aprendeu numa rede só, como um micélio. Refaça seu mapa conceitual, compare com o do primeiro encontro e prepare seu lapbook para apresentar.",
+  cards:[
+   {art:"hifa", h:"Juntando as ideias", p:"Fungos são heterotróficos por absorção, com parede de quitina e corpo de hifas. Reproduzem-se por esporos. São decompositores, mutualistas ou parasitas, e estão no pão, no remédio, na roça e na floresta."}
+  ],
+  quizMix:true,
+  lap:{t:"Lapbook · Apresentação", items:["Revise todas as dobras e bolsos.","Cole a versão final do seu mapa conceitual.","Escolha a parte de que mais gostou para apresentar à turma."]},
+  map:"final"}
+];
+
+const QUESTIONS = [
+ {id:"q1",m:"m1",q:"Por que os fungos não são classificados como plantas?",o:["Não fazem fotossíntese e têm parede celular de quitina","Vivem apenas dentro da água","Não possuem células","São todos microscópicos"],a:0,h:"Pense em como eles conseguem alimento e do que é feita a parede de suas células.",e:"Plantas fazem fotossíntese e têm parede de celulose. Fungos são heterotróficos e têm parede de quitina."},
+ {id:"q2",m:"m1",q:"Como os fungos se alimentam?",o:["Liberam enzimas e absorvem nutrientes já digeridos","Engolem pequenos animais","Produzem açúcar com a luz do sol","Filtram a água com cílios"],a:0,h:"A digestão acontece fora do corpo do fungo.",e:"É a nutrição heterotrófica por absorção."},
+ {id:"q3",m:"m1",q:"O conjunto de hifas de um fungo se chama:",o:["Micélio","Esporo","Lamela","Píleo"],a:0,h:"É a rede escondida no solo ou na madeira.",e:"Hifas são os filamentos; o micélio é a rede formada por elas."},
+ {id:"q4",m:"m2",q:"O cogumelo que vemos sobre o tronco é:",o:["O corpo de frutificação, que produz esporos","O fungo inteiro","Uma raiz do fungo","Uma planta parasita"],a:0,h:"Compare com uma mangueira: qual parte espalha as sementes?",e:"O cogumelo é a estrutura reprodutiva; o micélio continua dentro do substrato."},
+ {id:"q5",m:"m2",q:"Qual destas é uma reprodução assexuada das leveduras?",o:["Brotamento","Polinização","Germinação de sementes","Fecundação interna"],a:0,h:"Uma célula nova sai da célula mãe como um broto.",e:"No brotamento, a célula filha cresce presa à mãe e depois se solta."},
+ {id:"q6",m:"m2",q:"Para que servem os esporos?",o:["Dispersar o fungo e originar novas hifas","Fazer fotossíntese","Proteger o cogumelo da chuva","Armazenar água"],a:0,h:"Pequenos e leves, eles viajam com o vento, a água e os animais.",e:"Ao germinar em local adequado, o esporo forma novas hifas."},
+ {id:"q7",m:"m3",q:"O fermento usado para fazer pão é:",o:["Uma levedura, fungo unicelular","Uma bactéria","Um cogumelo moído","Uma alga"],a:0,h:"É um fungo de uma única célula que faz fermentação.",e:"Saccharomyces cerevisiae libera CO₂ na fermentação e faz a massa crescer."},
+ {id:"q8",m:"m3",q:"Um líquen é formado por:",o:["Um fungo associado a uma alga ou cianobactéria","Um musgo e uma samambaia","Duas espécies de cogumelo","Uma bactéria e um vírus"],a:0,h:"Um parceiro faz fotossíntese, o outro dá abrigo.",e:"É uma associação mutualística entre fungo e organismo fotossintetizante."},
+ {id:"q9",m:"m3",q:"A orelha-de-pau pertence a qual grupo?",o:["Basidiomicetos","Quitridiomicetos","Leveduras","Liquens"],a:0,h:"Mesmo grupo dos cogumelos de chapéu, que formam esporos em basídios.",e:"Orelhas-de-pau como Pycnoporus são basidiomicetos decompositores de madeira."},
+ {id:"q10",m:"m4",q:"Qual o papel principal dos fungos decompositores na Amazônia?",o:["Devolver ao solo os nutrientes de folhas e troncos mortos","Produzir oxigênio para a floresta","Polinizar as flores","Caçar insetos"],a:0,h:"O solo amazônico é pobre; a riqueza está na reciclagem.",e:"A decomposição rápida mantém os nutrientes circulando entre solo e plantas."},
+ {id:"q11",m:"m4",q:"Micorrizas são uma associação entre:",o:["Fungos e raízes de plantas","Fungos e formigas","Fungos e peixes","Algas e bactérias"],a:0,h:"Mico = fungo; riza = raiz.",e:"O fungo ajuda na absorção de água e fósforo; a planta fornece açúcares."},
+ {id:"q12",m:"m4",q:"As saúvas usam as folhas que cortam para:",o:["Cultivar um fungo que serve de alimento","Construir ninhos à prova d'água","Comer as folhas diretamente","Fazer sombra para as larvas"],a:0,h:"Elas são agricultoras há milhões de anos.",e:"As folhas alimentam o fungo Leucoagaricus gongylophorus, que alimenta a colônia."},
+ {id:"q13",m:"m5",q:"A vassoura-de-bruxa do cacaueiro é causada por:",o:["Um fungo","Um vírus","Uma formiga","Falta de chuva"],a:0,h:"Seu nome científico é Moniliophthora perniciosa.",e:"É um fungo parasita nativo da Amazônia."},
+ {id:"q14",m:"m5",q:"Qual remédio foi descoberto a partir de um bolor Penicillium?",o:["Penicilina","Insulina","Vacina da febre amarela","Paracetamol"],a:0,h:"Fleming, 1928, um bolor numa placa com bactérias.",e:"A penicilina foi o primeiro antibiótico usado em larga escala."},
+ {id:"q15",m:"m5",q:"Você achou um cogumelo bonito no quintal. O que fazer?",o:["Não comer: só especialistas identificam com segurança","Comer se tiver cor clara","Comer se tiver cheiro bom","Cozinhar bem para tirar o veneno"],a:0,h:"Cor, cheiro e cozimento não garantem segurança.",e:"Muitos cogumelos tóxicos parecem inofensivos. Na dúvida, não coma."}
+];
+
+const SPECIES = [
+ {id:"pyc",pop:"Orelha-de-pau",sci:"Pycnoporus sanguineus",grp:"Basidiomiceto",role:"Decompositor",art:"orelha",c:"#E2622A",onde:"Troncos e galhos mortos, em quintais e matas, inclusive no Marajó.",curio:"A cor laranja-viva vem de pigmentos. É usada na medicina popular de algumas comunidades e estudada pela ciência."},
+ {id:"coo",pop:"Taça-peluda",sci:"Cookeina tricholoma",grp:"Ascomiceto",role:"Decompositor",art:"taca",c:"#E0507A",onde:"Galhos caídos na mata úmida.",curio:"Os pelos na borda da taça dão o nome. Os esporos saem dos ascos em pequenas nuvens."},
+ {id:"pha",pop:"Véu-de-noiva",sci:"Phallus indusiatus",grp:"Basidiomiceto",role:"Decompositor",art:"veu",c:"#F2EEE2",onde:"Solo rico em folhas, após chuvas.",curio:"A cabeça tem uma massa escura de esporos com cheiro forte que atrai moscas, que espalham os esporos."},
+ {id:"gea",pop:"Estrela-da-terra",sci:"Geastrum spp.",grp:"Basidiomiceto",role:"Decompositor",art:"estrela",c:"#B98B5A",onde:"Serrapilheira (camada de folhas no chão).",curio:"Quando a gota de chuva bate na bolinha central, sai um jato de esporos pelo buraquinho."},
+ {id:"leu",pop:"Fungo das saúvas",sci:"Leucoagaricus gongylophorus",grp:"Basidiomiceto",role:"Mutualista",art:"formiga",c:"#EDE3C8",onde:"Dentro dos ninhos das formigas cortadeiras.",curio:"Não vive fora do ninho: depende das formigas, e elas dependem dele."},
+ {id:"oph",pop:"Fungo-zumbi",sci:"Ophiocordyceps spp.",grp:"Ascomiceto",role:"Parasita",art:"zumbi",c:"#C9A13B",onde:"Em formigas, presas a folhas e galhos na mata.",curio:"A formiga infectada sobe numa folha e fica presa. Do corpo dela nasce a haste que solta esporos."},
+ {id:"mon",pop:"Vassoura-de-bruxa",sci:"Moniliophthora perniciosa",grp:"Basidiomiceto",role:"Parasita",art:"vassoura",c:"#8A5A2B",onde:"Cacaueiros e cupuaçuzeiros.",curio:"O nome vem dos ramos inchados e secos que parecem uma vassoura velha."},
+ {id:"myc",pop:"Cogumelo luminoso",sci:"Mycena spp.",grp:"Basidiomiceto",role:"Decompositor",art:"luz",c:"#7FE3A6",onde:"Madeira em decomposição, no chão úmido da mata.",curio:"A luz verde é produzida por uma reação química. Acredita-se que atraia insetos que espalham esporos."},
+ {id:"sac",pop:"Fermento de pão",sci:"Saccharomyces cerevisiae",grp:"Ascomiceto",role:"Uso humano",art:"levedura",c:"#E7C98A",onde:"Na cozinha, em padarias e na indústria.",curio:"Uma única célula. Faz o pão crescer liberando gás carbônico."},
+ {id:"pen",pop:"Bolor verde",sci:"Penicillium spp.",grp:"Ascomiceto",role:"Uso humano",art:"bolor",c:"#4F9A8A",onde:"Frutas e pães velhos.",curio:"Algumas espécies produzem penicilina; outras dão sabor a queijos."},
+ {id:"cla",pop:"Líquen",sci:"Fungo + alga",grp:"Associação",role:"Mutualista",art:"liquen",c:"#9DB88A",onde:"Troncos, pedras e muros.",curio:"Liquens são sensíveis à poluição e servem como indicadores da qualidade do ar."},
+ {id:"glo",pop:"Fungo micorrízico",sci:"Glomeromycota",grp:"Glomeromiceto",role:"Mutualista",art:"micorriza",c:"#D9B26B",onde:"Dentro das raízes da maioria das plantas.",curio:"As hifas funcionam como uma extensão das raízes, alcançando água e fósforo mais longe."}
+];
+
+const CLASS_ROUNDS = [
+ {id:"c1",t:"Quem é fungo?",bins:["É fungo","Não é fungo"],items:[
+  ["Fermento de pão",0,"Levedura: fungo unicelular."],["Orelha-de-pau",0,"Basidiomiceto que decompõe madeira."],["Musgo",1,"Musgo é planta (briófita): faz fotossíntese."],["Mofo do pão",0,"Bolor: fungo de hifas."],["Samambaia",1,"Samambaia é planta (pteridófita)."],["Bactéria do iogurte",1,"Bactérias são procariontes, não fungos."],["Cogumelo do mato",0,"Corpo de frutificação de um fungo."],["Alga verde",1,"Algas fazem fotossíntese; não são fungos."],["Líquen",0,"Parte dele é fungo, associado a uma alga ou cianobactéria."]]},
+ {id:"c2",t:"Qual é o papel?",bins:["Decompositor","Mutualista","Parasita"],items:[
+  ["Orelha-de-pau",0,"Decompõe troncos mortos."],["Fungo das saúvas",1,"Fungo e formigas se beneficiam."],["Vassoura-de-bruxa",2,"Prejudica o cacaueiro."],["Micorriza",1,"Fungo e raiz trocam nutrientes."],["Fungo-zumbi",2,"Infecta e mata formigas."],["Estrela-da-terra",0,"Decompõe folhas no chão."],["Fungo do líquen",1,"Divide recursos com a alga."],["Frieira",2,"Fungo que se alimenta da pele humana."],["Bolor em fruta caída",0,"Recicla a fruta morta."]]}
+];
+
+const CONCEPTS = ["Fungos","Reino Fungi","Heterotróficos","Absorção","Quitina","Hifas","Micélio","Esporos","Corpo de frutificação","Leveduras","Bolores","Cogumelos","Liquens","Micorrizas","Decompositores","Parasitas","Mutualismo","Floresta amazônica","Solo","Saúvas","Penicilina","Vassoura-de-bruxa","Alimentos","Ser humano"];
+const LINKS = ["são","formam","possuem","produzem","se reproduzem por","vivem em","atuam como","se associam a","causam","originam","dependem de","ajudam"];
+
+/* ============ ESTADO ============ */
+const KEY="micoverso.v1";
+let S = {name:"",spores:0,done:{},ans:{},maps:{inicial:[],final:[]},cls:{}};
+try{const raw=localStorage.getItem(KEY); if(raw) S=Object.assign(S,JSON.parse(raw));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){} renderPill()}
+const tries = {}; // tentativas da sessão por pergunta
+let tab = "trilha";
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $ = s => document.querySelector(s);
+
+/* ============ ILUSTRAÇÕES ============ */
+const SPORE_ICON = '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="4" fill="var(--spore)"/><circle cx="3.5" cy="5" r="1.6" fill="var(--spore)" opacity=".6"/><circle cx="16.5" cy="4" r="1.3" fill="var(--spore)" opacity=".5"/><circle cx="15.5" cy="16" r="1.6" fill="var(--spore)" opacity=".7"/></svg>';
+function art(kind,c){
+  const bg='<circle cx="50" cy="50" r="48" fill="var(--surface2)"/>';
+  const S2=(x)=>`<svg viewBox="0 0 100 100" role="img" aria-hidden="true">${bg}${x}</svg>`;
+  switch(kind){
+   case "orelha": return S2(`<rect x="10" y="62" width="80" height="16" rx="8" fill="#7A5A3A"/><path d="M22 62q14-22 30 0z" fill="${c||'#E2622A'}"/><path d="M44 48q16-20 34 0z" fill="${c||'#E2622A'}"/><path d="M30 40q10-14 22 0z" fill="${c||'#E2622A'}" opacity=".85"/>`);
+   case "taca": return S2(`<path d="M28 40q22 34 44 0z" fill="${c||'#E0507A'}"/><ellipse cx="50" cy="40" rx="22" ry="6" fill="#8E2A4C"/><path d="M50 58v18" stroke="#7A5A3A" stroke-width="5"/><g stroke="${c||'#E0507A'}" stroke-width="1.5">${Array.from({length:9},(_,i)=>`<path d="M${30+i*5} 38l-1-6"/>`).join("")}</g><rect x="20" y="74" width="60" height="8" rx="4" fill="#7A5A3A"/>`);
+   case "veu": return S2(`<path d="M46 34h8v46h-8z" fill="#F4F0E4"/><path d="M38 34q12-22 24 0z" fill="#3A2E22"/><g fill="none" stroke="#E8E1CF" stroke-width="1.6"><path d="M38 36q-8 20-6 40h36q2-20-6-40"/><path d="M34 50h32M33 62h34M32 72h36M44 36l-4 40M56 36l4 40M50 36v40"/></g>`);
+   case "estrela": return S2(`<g fill="${c||'#B98B5A'}">${Array.from({length:7},(_,i)=>{const a=i*2*Math.PI/7;const x=50+Math.cos(a)*34,y=58+Math.sin(a)*20;return `<path d="M50 58L${(50+Math.cos(a-0.25)*14).toFixed(1)} ${(58+Math.sin(a-0.25)*9).toFixed(1)}L${x.toFixed(1)} ${y.toFixed(1)}L${(50+Math.cos(a+0.25)*14).toFixed(1)} ${(58+Math.sin(a+0.25)*9).toFixed(1)}z"/>`}).join("")}</g><circle cx="50" cy="50" r="13" fill="#8C6A48"/><circle cx="50" cy="38" r="2" fill="#3A2E22"/>`);
+   case "formiga": return S2(`<g fill="#EDE3C8">${[[30,66,10],[46,72,12],[64,66,11],[54,58,9],[38,58,8]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="${p[2]}"/>`).join("")}</g><g fill="#8A3A1E"><ellipse cx="40" cy="34" rx="5" ry="4"/><ellipse cx="50" cy="34" rx="5" ry="3.5"/><ellipse cx="62" cy="34" rx="8" ry="5"/></g><path d="M36 30q-6-8-12-6M70 30l10-10" stroke="#8A3A1E" stroke-width="2" fill="none"/><path d="M68 22l14 4-6 10z" fill="#4E9A4A"/>`);
+   case "zumbi": return S2(`<path d="M14 70q36-14 72 0" stroke="#4E9A4A" stroke-width="10" fill="none"/><g fill="#5A3A22"><ellipse cx="40" cy="60" rx="5" ry="4"/><ellipse cx="50" cy="60" rx="5" ry="3.5"/><ellipse cx="61" cy="61" rx="7" ry="4.5"/></g><path d="M38 56q-6-20 2-34" stroke="${c||'#C9A13B'}" stroke-width="3" fill="none"/><circle cx="40" cy="22" r="5" fill="${c||'#C9A13B'}"/>`);
+   case "vassoura": return S2(`<ellipse cx="54" cy="58" rx="16" ry="24" fill="#D8A13A" transform="rotate(-15 54 58)"/><g fill="#5A3A22"><circle cx="50" cy="52" r="5"/><circle cx="60" cy="66" r="4"/><circle cx="56" cy="44" r="3"/></g><path d="M30 20v28M30 30l-10-8M30 30l9-9M30 40l-8-5" stroke="#6E4A2A" stroke-width="3" fill="none"/>`);
+   case "luz": return S2(`<circle cx="50" cy="50" r="48" fill="#132018"/><g opacity=".35" fill="#7FE3A6"><circle cx="38" cy="50" r="18"/><circle cx="64" cy="58" r="14"/></g><path d="M37 50v22M63 58v16" stroke="#BDE8CB" stroke-width="3"/><path d="M27 52q11-18 22 0z" fill="#7FE3A6"/><path d="M55 59q8-14 16 0z" fill="#7FE3A6"/><rect x="18" y="74" width="64" height="8" rx="4" fill="#3A2E22"/>`);
+   case "levedura": return S2(`<g fill="${c||'#E7C98A'}" stroke="#A9864A" stroke-width="2">${[[40,46,14,11],[62,40,10,8],[56,64,12,9],[32,66,8,6],[72,56,6,5]].map(p=>`<ellipse cx="${p[0]}" cy="${p[1]}" rx="${p[2]}" ry="${p[3]}"/>`).join("")}</g>`);
+   case "bolor": return S2(`<path d="M18 70V44q0-16 16-16h32q16 0 16 16v26z" fill="#E6C48E"/><path d="M24 70V46q0-12 12-12h28q12 0 12 12v24z" fill="#F4E3BF"/>${[[40,48],[58,56],[48,62],[64,44],[34,60]].map(p=>`<g fill="${c||'#4F9A8A'}"><circle cx="${p[0]}" cy="${p[1]}" r="6" opacity=".6"/><circle cx="${p[0]}" cy="${p[1]}" r="3"/></g>`).join("")}`);
+   case "liquen": return S2(`<rect x="14" y="20" width="22" height="64" rx="4" fill="#7A5A3A"/>${[[40,34,10],[48,52,13],[42,70,9],[60,42,8]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="${p[2]}" fill="${c||'#9DB88A'}" stroke="#6E8C5E" stroke-width="2" stroke-dasharray="3 2"/>`).join("")}`);
+   case "micorriza": return S2(`<rect x="2" y="44" width="96" height="2" fill="#7A5A3A"/><path d="M50 20v24" stroke="#4E9A4A" stroke-width="4"/><path d="M42 24q8-10 8 0M58 24q-8-10-8 0" fill="#4E9A4A"/><g stroke="#8A6236" stroke-width="3" fill="none"><path d="M50 46v20l-10 14M50 60l12 16M50 52l-14 8"/></g><g stroke="${c||'#D9B26B'}" stroke-width="1.3" fill="none"><path d="M40 80q-12 4-20-6M62 76q10 6 20-2M36 60q-10-4-16 4M62 76q4 10 14 12M40 80q2 8-6 12"/></g>`);
+   case "hifa": return S2(`<g stroke="var(--accent)" stroke-width="2.5" fill="none" stroke-linecap="round"><path d="M14 70q20-6 36-24t36-18"/><path d="M32 64q2-14 14-22"/><path d="M50 46q14 10 30 8"/><path d="M62 38q-2-14 8-22"/><path d="M24 68q-2 10 6 16"/><path d="M68 52q4 12 14 16"/></g><circle cx="86" cy="28" r="3" fill="var(--spore)"/>`);
+   case "esporo": return S2(`${[[30,30,5],[50,22,4],[68,34,6],[40,50,3],[60,56,5],[34,70,4],[72,68,3],[52,76,4],[24,50,3]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="${p[2]}" fill="var(--spore)" opacity="${0.5+p[2]/12}"/>`).join("")}<path d="M14 84q20-8 40-2t32-2" stroke="var(--muted)" stroke-width="2" fill="none" stroke-dasharray="4 4"/>`);
+   case "cogumelo": return S2(`<path d="M44 46h12l2 32H42z" fill="#EFE6D2"/><path d="M18 48q32-46 64 0z" fill="#B5643A"/><g stroke="#8A4A2A" stroke-width="1.2">${Array.from({length:11},(_,i)=>`<path d="M${24+i*5.2} 48l${(i-5)*0.6} 4"/>`).join("")}</g><rect x="20" y="78" width="60" height="6" rx="3" fill="#7A5A3A"/>`);
+   case "enzima": return S2(`<rect x="22" y="58" width="56" height="20" rx="6" fill="#4E9A4A"/><path d="M30 58q4-14 0-30M50 58q-4-16 4-34M70 58q4-12-2-26" stroke="var(--accent)" stroke-width="3" fill="none"/>${[[38,48],[60,46],[46,40],[66,52]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="2.5" fill="var(--spore)"/>`).join("")}`);
+   case "quitina": return S2(`<g fill="none" stroke="var(--accent)" stroke-width="2.5">${[[34,40],[52,40],[70,40],[43,56],[61,56],[34,72],[52,72],[70,72]].map(p=>`<path d="M${p[0]-9} ${p[1]}l4.5-8h9l4.5 8-4.5 8h-9z"/>`).join("")}</g>`);
+   case "pele": return S2(`<path d="M30 80V40q0-12 10-12h4v52zM46 80V30q0-8 8-8s8 8 8 8v50zM64 80V38q0-8 8-8s6 6 6 10v40z" fill="#C89A72"/>${[[52,50],[58,62],[70,52]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#F3EDE1" opacity=".9"/>`).join("")}`);
+   case "alerta": return S2(`<path d="M50 18L84 78H16z" fill="var(--hint-bg)" stroke="var(--spore)" stroke-width="4" stroke-linejoin="round"/><path d="M50 40v20" stroke="var(--spore)" stroke-width="6" stroke-linecap="round"/><circle cx="50" cy="69" r="3.5" fill="var(--spore)"/>`);
+   case "saber": return S2(`<path d="M24 74V30l26 8 26-8v44l-26 8z" fill="var(--surface)" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"/><path d="M50 38v44" stroke="var(--accent)" stroke-width="3"/><path d="M58 56q6-12 12 0z" fill="#E2622A"/><path d="M63 56v8" stroke="#7A5A3A" stroke-width="2"/>`);
+  }
+  return S2("");
+}
+const MICELIA = `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M24 34h16l2 22H22z" fill="#F1E8D4"/><path d="M6 36q26-40 52 0z" fill="var(--spore)"/><circle cx="20" cy="22" r="3" fill="#F1E8D4"/><circle cx="38" cy="16" r="2.5" fill="#F1E8D4"/><circle cx="46" cy="28" r="2" fill="#F1E8D4"/><circle cx="28" cy="44" r="2" fill="#2A2117"/><circle cx="36" cy="44" r="2" fill="#2A2117"/><path d="M29 49q3 3 6 0" stroke="#2A2117" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`;
+
+/* ============ UI GERAL ============ */
+function renderPill(){ $("#sporePill").innerHTML = SPORE_ICON + `<span>${S.spores}</span><span class="sr" style="position:absolute;left:-9999px">esporos</span>`; }
+function award(n){ S.spores += n; save(); }
+function setTab(t){ tab=t; document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-current", b.dataset.tab===t?"page":"false")); const v=$("#view"); v.scrollTop=0; ({trilha:viewTrilha,micoteca:viewMicoteca,desafios:viewDesafios,micoia:viewIA,mapa:viewMapa})[t](v); }
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+$("#profBtn").onclick=openProfile;
+
+/* ============ TRILHA ============ */
+function viewTrilha(v){
+  const n = MISSIONS.filter(m=>S.done[m.id]).length;
+  const next = MISSIONS.find(m=>!S.done[m.id]);
+  v.innerHTML = `<div class="stack">
+   <div class="hello"><div class="av">${MICELIA}</div><div style="min-width:0">
+     <p class="eyebrow">Micélia, sua guia</p>
+     <h1 style="font-size:1.5rem">${S.name?`Olá, ${esc(S.name)}!`:"Olá, explorador(a)!"}</h1>
+     <p class="lead">${n===6?"Você completou a trilha inteira.":next?`Próximo encontro: ${esc(next.title)}`:""}</p></div></div>
+   ${S.name?"":`<form class="box stack" id="nameForm" style="gap:10px"><label for="nm">Como você quer ser chamado(a)?</label><div class="ask"><input type="text" id="nm" maxlength="30" placeholder="Seu nome ou apelido" autocomplete="off"><button class="btn">Salvar</button></div></form>`}
+   <div><div class="row" style="justify-content:space-between;margin-bottom:6px"><span class="eyebrow">Sua trilha</span><span style="font-variant-numeric:tabular-nums;font-weight:700">${n} de 6 encontros</span></div><div class="prog"><i style="width:${n/6*100}%"></i></div></div>
+   <div class="trail">${MISSIONS.map((m,i)=>{const d=S.done[m.id],nx=next&&next.id===m.id;return `<button class="node ${d?"done":""} ${nx?"next":""}" data-m="${m.id}"><span class="num">${d?"✓":i+1}</span><span class="info"><span class="tag ${d?"ok":nx?"go":""}">${d?"Concluído":nx?"Agora":"Encontro "+(i+1)}</span><h3 style="margin-top:6px">${esc(m.title)}</h3><p class="meta">${esc(m.sub)}</p></span></button>`}).join("")}</div>
+  </div>`;
+  v.querySelectorAll(".node").forEach(b=>b.onclick=()=>openMission(b.dataset.m));
+  const f=$("#nameForm"); if(f) f.onsubmit=e=>{e.preventDefault(); const val=$("#nm").value.trim(); if(val){S.name=val; save(); setTab("trilha");}};
+}
+
+/* ============ MISSÃO ============ */
+let speaking=false;
+function speak(text,btn){
+  try{
+    const ss=window.speechSynthesis; if(!ss){btn.textContent="Áudio indisponível";btn.disabled=true;return}
+    if(speaking){ss.cancel();speaking=false;btn.textContent="▶ Ouvir narração";return}
+    const u=new SpeechSynthesisUtterance(text.replace(/[“”]/g,"")); u.lang="pt-BR"; u.rate=0.98;
+    const vs=ss.getVoices(); const pv=vs.find(x=>/pt[-_]BR/i.test(x.lang))||vs.find(x=>/^pt/i.test(x.lang)); if(pv) u.voice=pv;
+    u.onend=()=>{speaking=false;btn.textContent="▶ Ouvir narração"};
+    ss.cancel(); ss.speak(u); speaking=true; btn.textContent="■ Parar narração";
+  }catch(e){btn.textContent="Áudio indisponível";btn.disabled=true}
+}
+function stopSpeak(){try{window.speechSynthesis&&window.speechSynthesis.cancel()}catch(e){} speaking=false}
+
+function missionSteps(m){
+  const st=[{k:"narr"}]; m.cards.forEach(c=>st.push({k:"card",c}));
+  let qs = m.quizMix ? ["q2","q5","q8","q11","q13","q15"].map(id=>QUESTIONS.find(q=>q.id===id)) : QUESTIONS.filter(q=>q.m===m.id);
+  st.push({k:"quiz",qs,ctx:m.quizMix?"final":"m"});
+  if(m.map) st.push({k:"map",mode:m.map});
+  st.push({k:"lap"}); st.push({k:"end"}); return st;
+}
+function openMission(id){
+  const m=MISSIONS.find(x=>x.id===id), steps=missionSteps(m); let i=0;
+  const sh=$("#sheet"); sh.hidden=false;
+  function draw(){
+    stopSpeak();
+    const s=steps[i], idx=MISSIONS.indexOf(m)+1;
+    let body="";
+    if(s.k==="narr") body=`<div class="narr pop"><p class="eyebrow">Encontro ${idx} · Narrativa</p><h2 style="font-size:1.7rem">${esc(m.title)}</h2><div class="guide">${MICELIA}<b>Micélia</b></div><div class="speech">${esc(m.narr)}</div><button class="btn ghost" id="sayBtn" style="align-self:flex-start">▶ Ouvir narração</button></div>`;
+    else if(s.k==="card") body=`<div class="concept pop"><div class="art">${art(s.c.art)}</div><p class="eyebrow">Conceito</p><h2>${esc(s.c.h)}</h2><p>${s.c.p}</p></div>`;
+    else if(s.k==="quiz") body=`<div class="stack pop"><div><p class="eyebrow">${s.ctx==="final"?"Desafio final":"Desafio do encontro"}</p><h2 style="font-size:1.5rem">Teste o que aprendeu</h2><p class="lead">Acertou de primeira: +10 esporos. Com dica: +5.</p></div><div class="stack" id="qList"></div></div>`;
+    else if(s.k==="map") body=`<div class="stack pop"><div><p class="eyebrow">Mapa conceitual ${s.mode}</p><h2 style="font-size:1.5rem">${s.mode==="inicial"?"O que você já sabe?":"O que você sabe agora?"}</h2><p class="lead">${s.mode==="inicial"?"Ligue conceitos com palavras de ligação. Não tem certo nem errado: é o seu ponto de partida.":"Monte de novo seu mapa e compare com o do 1º encontro."}</p></div><div id="mapHost"></div></div>`;
+    else if(s.k==="lap") body=`<div class="stack pop"><p class="eyebrow">Hora do lapbook</p><div class="lap"><h3>${esc(m.lap.t)}</h3><p>Registre no seu lapbook físico:</p><ul>${m.lap.items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div><p class="note">Use as etiquetas recortáveis entregues pela professora.</p></div>`;
+    else body=`<div class="stack pop" style="align-items:center;text-align:center;padding-top:20px"><div style="width:110px">${badgeSvg(true)}</div><p class="eyebrow">Selo conquistado</p><h2 style="font-size:1.8rem">${esc(m.badge)}</h2><p class="lead">${S.done[m.id]?"Você já tinha concluído este encontro.":"+20 esporos por concluir o encontro."}</p></div>`;
+    sh.innerHTML = `<div class="sheet-head"><button class="iconbtn" id="closeM" aria-label="Fechar encontro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button><div class="t"><b>${esc(m.title)}</b><small>Encontro ${idx} · passo ${i+1} de ${steps.length}</small><div class="steps">${steps.map((_,j)=>`<i class="${j<=i?"on":""}"></i>`).join("")}</div></div></div>
+     <div class="sheet-body" id="sb">${body}</div>
+     <div class="sheet-foot"><button class="btn ghost" id="prevB" ${i===0?"disabled":""}>Voltar</button><button class="btn" id="nextB">${s.k==="end"?"Voltar à trilha":"Continuar"}</button></div>`;
+    $("#sb").scrollTop=0;
+    $("#closeM").onclick=close;
+    $("#prevB").onclick=()=>{if(i>0){i--;draw()}};
+    $("#nextB").onclick=()=>{ if(s.k==="end"){close();return} i++; if(steps[i].k==="end"&&!S.done[m.id]){S.done[m.id]=true;award(20)} draw(); };
+    if(s.k==="narr") $("#sayBtn").onclick=e=>speak(m.narr,e.currentTarget);
+    if(s.k==="quiz"){const L=$("#qList"); s.qs.forEach(q=>L.appendChild(quizCard(q,s.ctx==="final"?"final":"m")))}
+    if(s.k==="map") mapBuilder($("#mapHost"),s.mode);
+  }
+  function close(){stopSpeak(); sh.hidden=true; sh.innerHTML=""; setTab(tab)}
+  draw();
+}
+
+/* ============ QUIZ COM DICA ============ */
+function quizCard(q,ctx){
+  const key=ctx+":"+q.id, el=document.createElement("div"); el.className="q";
+  const order = q.o.map((t,i)=>i); // embaralha de forma estável por pergunta
+  order.sort((a,b)=>((a*7+q.id.length*3)%5)-((b*7+q.id.length*3)%5));
+  function draw(){
+    const res=S.ans[key]; const t=tries[key]||0;
+    el.innerHTML=`<h3>${esc(q.q)}</h3>${order.map(i=>{let cls="opt"; if(res!==undefined&&i===q.a) cls+=" right"; if((tries[key+"w"]||[]).includes(i)) cls+=" wrong"; return `<button class="${cls}" data-i="${i}" ${res!==undefined?"disabled":""}>${esc(q.o[i])}</button>`}).join("")}
+     ${res===undefined&&t===1?`<div class="hintbox"><b>Dica:</b> ${esc(q.h)}</div>`:""}
+     ${res!==undefined?`<p class="expl">${res>0?`<span class="earn">+${res} esporos.</span> `:"Resposta certa destacada. "}${esc(q.e)}</p>`:""}`;
+    el.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+      const i=+b.dataset.i;
+      if(i===q.a){const pts=t===0?10:5; S.ans[key]=pts; award(pts)}
+      else { tries[key+"w"]=(tries[key+"w"]||[]).concat(i); if(t===0){tries[key]=1} else {S.ans[key]=0; save()} }
+      draw();
+    });
+  }
+  draw(); return el;
+}
+
+/* ============ MICOTECA ============ */
+let filt="Todos";
+function viewMicoteca(v){
+  const roles=["Todos","Decompositor","Mutualista","Parasita","Uso humano"];
+  const list=SPECIES.filter(s=>filt==="Todos"||s.role===filt);
+  v.innerHTML=`<div class="stack"><div><p class="eyebrow">Micoteca amazônica</p><h1 style="font-size:1.6rem">Fichas de fungos</h1><p class="lead">Toque numa ficha para ver onde vive e uma curiosidade.</p></div>
+   <div class="chips" role="group" aria-label="Filtrar por papel">${roles.map(r=>`<button class="chip" aria-pressed="${r===filt}" data-r="${r}">${r}</button>`).join("")}</div>
+   <div class="grid">${list.map(s=>`<button class="spc" data-s="${s.id}">${art(s.art,s.c)}<b>${esc(s.pop)}</b><i>${esc(s.sci)}</i><span class="tag">${esc(s.role)}</span></button>`).join("")}</div></div>`;
+  v.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{filt=b.dataset.r;viewMicoteca(v)});
+  v.querySelectorAll(".spc").forEach(b=>b.onclick=()=>openFicha(b.dataset.s));
+}
+function openFicha(id){
+  const s=SPECIES.find(x=>x.id===id), sh=$("#sheet"); sh.hidden=false;
+  sh.innerHTML=`<div class="sheet-head"><button class="iconbtn" id="closeF" aria-label="Fechar ficha"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 6l-6 6 6 6"/></svg></button><div class="t"><b>${esc(s.pop)}</b><small>Ficha da Micoteca</small></div></div>
+   <div class="sheet-body"><div class="stack ficha pop"><div class="art">${art(s.art,s.c)}</div><div style="text-align:center"><h2 style="font-size:1.7rem">${esc(s.pop)}</h2><p style="font-style:italic;color:var(--muted)">${esc(s.sci)}</p></div>
+   <dl class="box"><dt>Grupo</dt><dd>${esc(s.grp)}</dd><dt>Papel</dt><dd>${esc(s.role)}</dd><dt>Onde vive</dt><dd>${esc(s.onde)}</dd></dl>
+   <div class="box"><p class="eyebrow" style="margin-bottom:4px">Curiosidade</p><p>${esc(s.curio)}</p></div>
+   ${["pyc","pha","coo","myc","gea"].includes(s.id)?`<p class="note">Observe na natureza, mas não coma cogumelos silvestres.</p>`:""}</div></div>`;
+  $("#closeF").onclick=()=>{sh.hidden=true;sh.innerHTML=""};
+}
+
+/* ============ DESAFIOS ============ */
+let dMode=null;
+function viewDesafios(v){
+  if(dMode==="quiz"){ v.innerHTML=`<div class="stack"><button class="btn ghost" id="bk" style="align-self:flex-start">← Desafios</button><div><p class="eyebrow">Quiz geral · 15 perguntas</p><h1 style="font-size:1.5rem">Errou? Ganha uma dica.</h1></div><div class="stack" id="ql"></div><button class="btn ghost" id="rq">Zerar respostas do quiz geral</button></div>`;
+    const L=$("#ql"); QUESTIONS.forEach(q=>L.appendChild(quizCard(q,"geral")));
+    $("#bk").onclick=()=>{dMode=null;viewDesafios(v)};
+    $("#rq").onclick=()=>{Object.keys(S.ans).filter(k=>k.startsWith("geral:")).forEach(k=>delete S.ans[k]); Object.keys(tries).filter(k=>k.startsWith("geral:")).forEach(k=>delete tries[k]); save(); viewDesafios(v)}; return; }
+  if(dMode&&dMode.startsWith("c")){ classGame(v,CLASS_ROUNDS.find(r=>r.id===dMode)); return; }
+  const answered=QUESTIONS.filter(q=>S.ans["geral:"+q.id]!==undefined).length;
+  v.innerHTML=`<div class="stack"><div><p class="eyebrow">Desafios</p><h1 style="font-size:1.6rem">Junte esporos</h1><p class="lead">Use nos encontros ou para revisar em casa.</p></div>
+   <button class="box" id="dq" style="text-align:left;display:flex;gap:14px;align-items:center"><div style="width:60px;flex:none">${art("esporo")}</div><div style="min-width:0"><h3>Quiz com dicas</h3><p class="meta lead">${answered} de 15 respondidas</p></div></button>
+   ${CLASS_ROUNDS.map(r=>`<button class="box" data-c="${r.id}" style="text-align:left;display:flex;gap:14px;align-items:center"><div style="width:60px;flex:none">${art(r.id==="c1"?"levedura":"micorriza")}</div><div style="min-width:0"><h3>Classifique: ${esc(r.t)}</h3><p class="meta lead">${S.cls[r.id]!==undefined?`Melhor resultado: ${S.cls[r.id]} de ${r.items.length}`:`${r.items.length} cartas · ${r.bins.join(" / ")}`}</p></div></button>`).join("")}</div>`;
+  $("#dq").onclick=()=>{dMode="quiz";viewDesafios(v)};
+  v.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{dMode=b.dataset.c;viewDesafios(v)});
+}
+function classGame(v,r){
+  let deck=r.items.map((x,i)=>i).sort(()=>Math.random()-.5), k=0, hits=0, fb=null;
+  function draw(){
+    if(k>=deck.length){ const best=Math.max(S.cls[r.id]||0,hits); S.cls[r.id]=best; save();
+      v.innerHTML=`<div class="stack" style="text-align:center;align-items:center;padding-top:20px"><div style="width:110px">${badgeSvg(hits>=r.items.length-1)}</div><h1 style="font-size:1.8rem">${hits} de ${r.items.length}</h1><p class="lead">${hits===r.items.length?"Classificação perfeita!":"Revise as cartas que errou e tente de novo."}</p><div class="row" style="justify-content:center"><button class="btn" id="again">Jogar de novo</button><button class="btn ghost" id="bk">Desafios</button></div></div>`;
+      $("#again").onclick=()=>classGame(v,r); $("#bk").onclick=()=>{dMode=null;viewDesafios(v)}; return; }
+    const it=r.items[deck[k]];
+    v.innerHTML=`<div class="stack"><div class="row" style="justify-content:space-between"><button class="btn ghost" id="bk">← Sair</button><span class="pill">${k+1} / ${deck.length}</span></div>
+      <p class="eyebrow">Classifique: ${esc(r.t)}</p><div class="card-big pop">${esc(it[0])}</div>
+      ${fb?`<div class="fb ${fb.ok?"ok":"no"}"><b>${fb.ok?"Acertou! +2 esporos.":"Ops! Era “"+esc(r.bins[it[1]])+"”."}</b> ${esc(it[2])}</div><button class="btn" id="nx">Próxima carta</button>`
+          :`<div class="bins">${r.bins.map((b,i)=>`<button class="bin" data-b="${i}">${esc(b)}</button>`).join("")}</div>`}</div>`;
+    $("#bk").onclick=()=>{dMode=null;viewDesafios(v)};
+    if(fb) $("#nx").onclick=()=>{fb=null;k++;draw()};
+    else v.querySelectorAll(".bin").forEach(b=>b.onclick=()=>{const ok=+b.dataset.b===it[1]; if(ok){hits++;award(2)} fb={ok}; draw()});
+  }
+  draw();
+}
+
+/* ============ MAPA CONCEITUAL ============ */
+let mapMode="inicial";
+function viewMapa(v){
+  v.innerHTML=`<div class="stack"><div><p class="eyebrow">Mapa conceitual</p><h1 style="font-size:1.6rem">Ligue as ideias</h1><p class="lead">Cada ligação é uma proposição: conceito + palavra de ligação + conceito.</p></div>
+   <div class="seg" role="group" aria-label="Versão do mapa"><button aria-pressed="${mapMode==="inicial"}" data-mm="inicial">Inicial (1º encontro)</button><button aria-pressed="${mapMode==="final"}" data-mm="final">Final</button></div>
+   <div id="mapHost"></div>
+   <div><p class="eyebrow" style="margin-bottom:8px">Comparação</p><div class="stats">
+     <div class="stat"><b>${S.maps.inicial.length} → ${S.maps.final.length}</b><span>proposições (inicial → final)</span></div>
+     <div class="stat"><b>${uniq(S.maps.inicial)} → ${uniq(S.maps.final)}</b><span>conceitos diferentes usados</span></div></div></div></div>`;
+  v.querySelectorAll("[data-mm]").forEach(b=>b.onclick=()=>{mapMode=b.dataset.mm;viewMapa(v)});
+  mapBuilder($("#mapHost"),mapMode,()=>viewMapa(v));
+}
+function uniq(list){const s=new Set(); list.forEach(p=>{s.add(p[0]);s.add(p[2])}); return s.size}
+function mapBuilder(host,mode,onChange){
+  const opts=CONCEPTS.map(c=>`<option>${esc(c)}</option>`).join("");
+  function draw(){
+    const L=S.maps[mode];
+    host.innerHTML=`<div class="stack" style="gap:12px"><form class="box stack" id="pf" style="gap:10px">
+      <div><label for="ca">Conceito</label><select id="ca">${opts}</select></div>
+      <div><label for="lk">Palavra de ligação</label><input type="text" id="lk" list="lkl" placeholder="ex.: são, formam, vivem em" maxlength="30" autocomplete="off"><datalist id="lkl">${LINKS.map(l=>`<option value="${esc(l)}">`).join("")}</datalist></div>
+      <div><label for="cb">Conceito</label><select id="cb">${opts}</select></div>
+      <button class="btn">Adicionar ligação</button></form>
+      ${L.length?mapSvg(L):`<p class="note">Seu mapa ${mode} ainda está vazio. Comece por “Fungos”.</p>`}
+      <div class="stack" style="gap:8px">${L.map((p,i)=>`<div class="prop"><span class="c">${esc(p[0])}</span><span class="l">${esc(p[1])}</span><span class="c">${esc(p[2])}</span><button class="x" data-del="${i}" aria-label="Remover ligação">×</button></div>`).join("")}</div>
+      ${L.length?`<button class="btn ghost" id="cp" style="align-self:flex-start">Copiar para o lapbook</button>`:""}</div>`;
+    host.querySelector("#cb").selectedIndex=5;
+    host.querySelector("#pf").onsubmit=e=>{e.preventDefault(); const a=host.querySelector("#ca").value,b=host.querySelector("#cb").value,l=host.querySelector("#lk").value.trim();
+      if(!l||a===b){host.querySelector("#lk").placeholder=a===b?"Escolha dois conceitos diferentes":"Escreva a palavra de ligação";host.querySelector("#lk").focus();return}
+      S.maps[mode].push([a,l,b]); save(); onChange?onChange():draw()};
+    host.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{S.maps[mode].splice(+b.dataset.del,1);save();onChange?onChange():draw()});
+    const cp=host.querySelector("#cp"); if(cp) cp.onclick=async()=>{const txt=L.map(p=>`${p[0]} — ${p[1]} → ${p[2]}`).join("\n"); try{await navigator.clipboard.writeText(txt);cp.textContent="Copiado"}catch(e){cp.textContent="Não foi possível copiar"}};
+  }
+  draw();
+}
+function mapSvg(L){
+  const nodes=[]; L.forEach(p=>{[p[0],p[2]].forEach(c=>{if(!nodes.includes(c))nodes.push(c)})});
+  const n=nodes.length, W=520, H=Math.max(300,n*28+120), cx=W/2, cy=H/2, R=Math.min(W,H)/2-50;
+  const pos={}; nodes.forEach((c,i)=>{const a=-Math.PI/2+i*2*Math.PI/n; pos[c]=[cx+Math.cos(a)*(n>1?R:0), cy+Math.sin(a)*(n>1?R:0)]});
+  const edges=L.map(p=>{const [x1,y1]=pos[p[0]],[x2,y2]=pos[p[2]];const mx=(x1+x2)/2,my=(y1+y2)/2;return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--line)" stroke-width="2" marker-end="url(#ar)"/><text x="${mx}" y="${my-4}" text-anchor="middle" font-size="12" font-style="italic" fill="var(--muted)" style="paint-order:stroke" stroke="var(--surface)" stroke-width="4">${esc(p[1])}</text>`}).join("");
+  const ns=nodes.map(c=>{const [x,y]=pos[c];const w=Math.max(60,c.length*7.4+18);return `<rect x="${x-w/2}" y="${y-15}" width="${w}" height="30" rx="8" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="${x}" y="${y+5}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent)">${esc(c)}</text>`}).join("");
+  return `<div class="mapwrap"><svg viewBox="0 0 ${W} ${H}" width="${W}" style="display:block;max-width:none;min-width:100%" font-family="Atkinson Hyperlegible, sans-serif"><defs><marker id="ar" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>${edges}${ns}</svg></div>`;
+}
+
+/* ============ DÚVIDAS (offline) ============ */
+const FAQ=[
+ ["Por que os cogumelos aparecem depois da chuva?","O micélio fica escondido no solo ou na madeira o tempo todo. Quando chove, ele absorve muita água e consegue inflar rapidamente o corpo de frutificação, o cogumelo. A umidade também ajuda os esporos a germinar. Por isso, depois das chuvas do Marajó, os troncos se enchem de orelhas-de-pau."],
+ ["Orelha-de-pau é planta?","Não. É um fungo basidiomiceto. Ela não tem clorofila, não faz fotossíntese e se alimenta decompondo a madeira morta onde cresce."],
+ ["Como as saúvas cultivam fungos?","As saúvas cortam folhas, levam para o ninho, picam e usam como adubo para um fungo, o Leucoagaricus gongylophorus. O fungo cresce sobre esse material e serve de alimento para a colônia. Formigas e fungo dependem um do outro: é mutualismo."],
+ ["O que é a vassoura-de-bruxa do cacau?","É uma doença causada pelo fungo Moniliophthora perniciosa, nativo da Amazônia. Ele infecta ramos e frutos do cacaueiro e do cupuaçuzeiro, que incham e secam, parecendo uma vassoura velha. Causa grandes prejuízos aos agricultores."],
+ ["Fungo é bicho ou planta?","Nenhum dos dois. Fungos formam um reino próprio, o Reino Fungi. Pelo DNA, são mais aparentados com os animais do que com as plantas."],
+ ["Posso comer cogumelo que nasce no quintal?","Não coma sem identificação feita por especialista. Muitos cogumelos tóxicos parecem inofensivos, e cor, cheiro ou cozimento não garantem segurança."],
+ ["Mofo é fungo?","Sim. Mofo, ou bolor, é um fungo formado por hifas que cresce sobre alimentos, papel e paredes úmidas. As manchas coloridas são os esporos."],
+ ["Por que o pão cresce?","O fermento é uma levedura, um fungo unicelular. Ela faz fermentação: consome o açúcar da massa e libera gás carbônico, que forma bolhas e faz o pão crescer."],
+ ["Fungo faz bem ou mal?","Os dois. Fungos decompõem a matéria morta, fazem parceria com raízes, dão origem a alimentos e remédios como a penicilina. Mas alguns causam micoses em pessoas e doenças em plantações."],
+ ["O que é micélio?","É a rede de filamentos (hifas) que forma o corpo do fungo. Fica escondida no solo, na madeira ou nas folhas e pode ocupar uma área enorme."],
+ ["Como os fungos se espalham?","Por esporos: estruturas microscópicas e leves levadas pelo vento, pela água da chuva e por animais. Ao cair em lugar úmido e com alimento, o esporo germina."],
+ ["Existe fungo que brilha?","Sim. Alguns fungos, como espécies de Mycena, produzem luz verde por uma reação química: é a bioluminescência. Dá para ver na mata escura."],
+ ["O que é líquen?","É uma parceria entre um fungo e uma alga ou cianobactéria. A alga produz alimento pela fotossíntese e o fungo oferece abrigo e umidade."],
+ ["O que são micorrizas?","São associações entre fungos e raízes de plantas. O fungo ajuda a planta a absorver água e fósforo, e a planta fornece açúcares ao fungo."],
+ ["Como evitar micose?","Seque bem os pés e entre os dedos, use chinelo em banheiros coletivos, não divida toalhas e troque roupas úmidas. Se aparecer mancha ou coceira persistente, procure um posto de saúde."]
+];
+let faqQ="";
+const norm=s=>s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+function viewIA(v){
+  const words=norm(faqQ).split(/\s+/).filter(w=>w.length>2);
+  const list=FAQ.filter(f=>!words.length||words.some(w=>norm(f[0]+" "+f[1]).includes(w)));
+  v.innerHTML=`<div class="stack"><div class="hello"><div class="av" style="width:52px;height:52px">${MICELIA}</div><div style="min-width:0"><p class="eyebrow">Pergunte à Micélia</p><h1 style="font-size:1.4rem">Dúvidas sobre fungos</h1></div></div>
+   <input type="text" id="fq" placeholder="Busque: chuva, saúva, mofo, pão…" value="${esc(faqQ)}" aria-label="Buscar dúvida" autocomplete="off">
+   <div class="stack" style="gap:10px" id="fl">${list.length?list.map(f=>`<details class="box"><summary style="font-weight:700;cursor:pointer">${esc(f[0])}</summary><p style="margin-top:8px">${esc(f[1])}</p></details>`).join(""):`<p class="note">Nenhuma resposta encontrada. Anote sua dúvida no lapbook e leve para a professora.</p>`}</div>
+   <p class="note">Não achou sua dúvida? Anote no bolso de perguntas do lapbook para discutir no próximo encontro.</p></div>`;
+  const i=$("#fq"); i.oninput=()=>{faqQ=i.value; const p=i.selectionStart; viewIA(v); const n=$("#fq"); n.focus(); n.setSelectionRange(p,p)};
+}
+
+/* ============ PERFIL ============ */
+function badgeSvg(on){return `<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="${on?"var(--accent-soft)":"var(--surface2)"}" stroke="${on?"var(--accent)":"var(--line)"}" stroke-width="3" stroke-dasharray="5 3"/><path d="M18 36q14-24 28 0z" fill="${on?"var(--spore)":"var(--line)"}"/><path d="M29 36h6v12h-6z" fill="${on?"var(--ink)":"var(--line)"}" opacity=".7"/></svg>`}
+function openProfile(){
+  const sh=$("#sheet"); sh.hidden=false; let confirming=false;
+  function draw(){
+    sh.innerHTML=`<div class="sheet-head"><button class="iconbtn" id="closeP" aria-label="Fechar perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button><div class="t"><b>Seu perfil</b><small>Progresso salvo neste aparelho</small></div></div>
+    <div class="sheet-body"><div class="stack">
+     <div class="box stack" style="gap:10px"><label for="pn">Nome</label><div class="ask"><input type="text" id="pn" value="${esc(S.name)}" maxlength="30" autocomplete="off"><button class="btn" id="sv">Salvar</button></div></div>
+     <div class="stats"><div class="stat"><b>${S.spores}</b><span>esporos coletados</span></div><div class="stat"><b>${MISSIONS.filter(m=>S.done[m.id]).length}/6</b><span>encontros concluídos</span></div></div>
+     <div><p class="eyebrow" style="margin-bottom:8px">Selos</p><div class="badges">${MISSIONS.map(m=>`<div class="badge ${S.done[m.id]?"":"off"}">${badgeSvg(!!S.done[m.id])}<div>${esc(m.badge)}</div></div>`).join("")}</div></div>
+     <div class="box"><p class="eyebrow" style="margin-bottom:6px">Sobre o aplicativo</p><p><b>MICOVERSO AMAZÔNICO</b> é o produto educacional da pesquisa de mestrado “Ensino de Micologia na Educação Básica: Desenvolvimento e Validação de um Artefato Pedagógico Digital Interativo Baseado em Inteligência Artificial sobre a Biodiversidade Fúngica Amazônica” (PPGEECA/UEPA).</p><p style="margin-top:8px">Autora: Jéssica Batista de Assunção · Orientador: Prof. Dr. Alcindo da Silva Martins Junior.<br>Público: 1º ano do Ensino Médio · E.E.E.M. Salomão Matos, Salvaterra, Marajó (PA).</p><p class="note" style="margin-top:8px">Usado junto com o lapbook físico, em 6 encontros.</p></div>
+     ${confirming?`<div class="confirm stack" style="gap:10px"><p><b>Apagar todo o progresso deste aparelho?</b> Esporos, selos, respostas e mapas serão perdidos.</p><div class="row"><button class="btn" id="yes" style="background:var(--bad);color:#fff">Apagar tudo</button><button class="btn ghost" id="no">Cancelar</button></div></div>`
+      :`<button class="btn ghost" id="rst">Recomeçar do zero</button>`}
+    </div></div>`;
+    $("#closeP").onclick=()=>{sh.hidden=true;sh.innerHTML="";setTab(tab)};
+    $("#sv").onclick=()=>{S.name=$("#pn").value.trim();save();$("#sv").textContent="Salvo"};
+    if(confirming){$("#yes").onclick=()=>{S={name:"",spores:0,done:{},ans:{},maps:{inicial:[],final:[]},cls:{}};save();confirming=false;draw()};$("#no").onclick=()=>{confirming=false;draw()}}
+    else $("#rst").onclick=()=>{confirming=true;draw()};
+  }
+  draw();
+}
+
+renderPill(); setTab("trilha");
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
+</script>
+
+</body>
+</html>
