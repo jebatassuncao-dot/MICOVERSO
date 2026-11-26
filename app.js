@@ -183,7 +183,7 @@ function viewInicio(v){
 /* ============ ENCONTROS ============ */
 function viewEncontros(v){
   const n=doneCount(), next=MISSIONS.find(m=>!S.done[m.id]);
-  v.innerHTML=`<div class="stack"><div><p class="eyebrow">Sequência didática</p><h1 style="font-size:1.6rem">Encontros</h1><p class="lead">Cada encontro tem um capítulo da história, conceitos, contexto histórico, curiosidade, atividade prática, atividades de fixação e tarefa do lapbook.</p></div>
+  v.innerHTML=`<div class="stack"><div><p class="eyebrow">Sequência didática</p><h1 style="font-size:1.6rem">Encontros</h1><p class="lead">Cada encontro tem um capítulo da história com pausas para pensar, conceitos, contexto histórico, curiosidade amazônica, atividade prática, atividades de fixação e a continuação da história.</p></div>
    <div><div class="row" style="justify-content:space-between;margin-bottom:6px"><span class="eyebrow">Progresso</span><span style="font-variant-numeric:tabular-nums;font-weight:700">${n} de 6</span></div><div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="${n}"><i style="width:${n/6*100}%"></i></div></div>
    <div class="trail">${MISSIONS.map((m,i)=>{const d=S.done[m.id],nx=next&&next.id===m.id;return `<button class="node ${d?"done":""} ${nx?"next":""}" data-m="${m.id}"><span class="num" aria-hidden="true">${d?"✓":i+1}</span><span class="info"><div><span class="tag ${d?"ok":nx?"go":""}">${d?"Concluído":nx?"Próximo":"Encontro "+(i+1)}</span><h3>${esc(m.title)}</h3><p class="meta">${esc(m.sub)}</p></div><span class="art">${art(m.art)}</span></span><span class="sr">Encontro ${i+1}${d?", concluído":""}</span></button>`}).join("")}</div></div>`;
   $$(".node",v).forEach(b=>b.onclick=()=>openMission(b.dataset.m));
@@ -193,7 +193,7 @@ function missionSteps(m){
   m.cards.forEach((c,i)=>st.push({k:"card",c,i,l:"Conceito"}));
   st.push({k:"curio",l:"Você sabia?"},{k:"pratica",l:"Mão na massa"},{k:"ex",l:"Atividades de fixação"});
   if(m.map) st.push({k:"map",l:"Mapa conceitual"});
-  st.push({k:"lap",l:"Lapbook"},{k:"diario",l:"Diário de bordo"},{k:"end",l:"Conclusão"});
+  st.push({k:"epi",l:"A história continua"},{k:"diario",l:"Diário de bordo"},{k:"end",l:"Conclusão"});
   return st;
 }
 function openMission(id){
@@ -208,7 +208,7 @@ function openMission(id){
     sh.steps.innerHTML=steps.map((_,j)=>`<i class="${j<=i?"on":""}"></i>`).join("");
     b.innerHTML=""; b.scrollTop=0;
     const wrap=document.createElement("div"); wrap.className="stack pop"; b.appendChild(wrap);
-    if(s.k==="story"){ wrap.innerHTML=`<div><p class="eyebrow">Capítulo ${idx}</p><h2 style="font-size:1.7rem">${esc(m.story.title)}</h2></div><div id="storyHost"></div>`; renderStory(m, $("#storyHost",wrap)); }
+    if(s.k==="story"){ wrap.innerHTML=`<div><p class="eyebrow">Capítulo ${idx}</p><h2 style="font-size:1.7rem">${esc(m.story.title)}</h2></div><div id="storyHost"></div>`; renderStory(m, $("#storyHost",wrap),"story"); }
     else if(s.k==="words"){ wrap.innerHTML=`<div><p class="eyebrow">Palavras e história</p><h2 style="font-size:1.5rem">De onde vêm as palavras?</h2></div>
        <div class="words">${m.words.map(w=>`<div class="word"><b>${esc(w[0])}</b><p>${esc(w[1])}</p></div>`).join("")}</div>${sayBtn(m.words.map(w=>w[0]+". "+w[1]).join(" "),"Ouvir as palavras")}
        <div><p class="eyebrow" style="margin:8px 0">Na história da ciência</p><div class="tl">${m.hist.map(h=>`<div class="tl-item"><div class="tl-year">${esc(h[0])}</div><p>${esc(h[1])}</p></div>`).join("")}</div></div>
@@ -224,7 +224,7 @@ function openMission(id){
        const g=$("#goFg",wrap); if(g) g.onclick=()=>openFungarioForm(); bindOpen(wrap); }
     else if(s.k==="ex"){ wrap.innerHTML=`<div><p class="eyebrow">Atividades de fixação</p><h2 style="font-size:1.5rem">Retome o que estudou</h2><p class="lead">Responda e confira a explicação de cada questão. Você pode refazer quando quiser.</p></div><div class="stack" id="exHost"></div>`; const h=$("#exHost",wrap); m.ex.forEach((e,j)=>h.appendChild(exercise(e,`${m.id}:${j}`))); }
     else if(s.k==="map"){ wrap.innerHTML=`<div><p class="eyebrow">Mapa conceitual ${m.map}</p><h2 style="font-size:1.5rem">${m.map==="inicial"?"O que você já sabe?":"O que você sabe agora?"}</h2><p class="lead">${m.map==="inicial"?"Ligue conceitos com palavras de ligação formando frases (proposições). É o seu ponto de partida; não há certo ou errado.":"Monte o mapa de novo e compare com o do 1º encontro."}</p></div><div id="mapHost"></div>`; mapBuilder($("#mapHost",wrap),m.map); }
-    else if(s.k==="lap"){ wrap.innerHTML=`<p class="eyebrow">Lapbook</p><div class="lap"><h3>${esc(m.lap.t)}</h3><p>Registre no seu lapbook:</p><ul>${m.lap.items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>${sayBtn(m.lap.t+". "+m.lap.items.join(" "))}`; }
+    else if(s.k==="epi"){ wrap.innerHTML=`<div><p class="eyebrow">A história continua</p><h2 style="font-size:1.6rem">${esc(m.epi.title)}</h2></div><div id="epiHost"></div>`; renderStory(m,$("#epiHost",wrap),"epi"); }
     else if(s.k==="diario"){ wrap.innerHTML=`<div><p class="eyebrow">Diário de bordo</p><h2 style="font-size:1.5rem">Pense e escreva</h2></div><div class="field"><label for="dia_${m.id}">${esc(m.diario)}</label><textarea id="dia_${m.id}" data-diary="${m.id}" style="min-height:160px">${esc(S.diary[m.id]||"")}</textarea><p class="note" style="margin-top:6px">Fica salvo automaticamente neste aparelho.</p></div>`; const t=$("textarea",wrap); t.oninput=()=>{S.diary[m.id]=t.value; save()}; }
     else { const nm=MISSIONS[idx]; const answered=m.ex.filter((_,j)=>S.ex[`${m.id}:${j}`]||S.open[`${m.id}:${j}`]).length;
       wrap.style.alignItems="center"; wrap.style.textAlign="center";
@@ -239,8 +239,8 @@ function openMission(id){
 function bindOpen(root){ $$("[data-open]",root).forEach(t=>t.oninput=()=>{S.open[t.dataset.open]=t.value; save()}) }
 
 /* ---------- História com pausas ---------- */
-function renderStory(m,host){
-  const st=m.story, sid=m.id;
+function renderStory(m,host,which){
+  which=which||"story"; const st=m[which], sid=which==="epi"?m.id+"_epi":m.id;
   const rec=S.story[sid]||(S.story[sid]={n:0,ans:{}});
   function reveal(){ while(rec.n<st.segs.length && st.segs[rec.n].p){ rec.n++ } } // mostra parágrafos até a próxima pausa
   if(rec.n===0) reveal();
@@ -261,11 +261,11 @@ function renderStory(m,host){
     const atEnd=rec.n>=st.segs.length;
     const pending=st.segs[rec.n]&&!st.segs[rec.n].p&&rec.ans[rec.n]==null;
     if(!atEnd && !pending) h+=`<button class="btn" id="contStory">Continuar a história</button>`;
-    if(atEnd) h+=`<p class="note">Fim do capítulo. Toque em Continuar, lá embaixo, para seguir o encontro.</p><button class="btn ghost small" id="reStory" style="align-self:flex-start">Ler o capítulo de novo</button>`;
+    if(atEnd) h+=`<p class="note">Fim deste trecho da história.</p><button class="btn ghost small" id="reStory" style="align-self:flex-start">Ler o capítulo de novo</button>`;
     h+=`</div>`; host.innerHTML=h;
     $$(".pause .opt",host).forEach(btn=>btn.onclick=()=>{ const j=+btn.dataset.j,k=+btn.dataset.k; rec.ans[j]=k; save(); announce(k===st.segs[j].a?"Resposta correta.":"Resposta incorreta. "+st.segs[j].o[st.segs[j].a]); draw() });
     const c=$("#contStory",host); if(c) c.onclick=()=>{ rec.n++; reveal(); save(); draw(); };
-    const r=$("#reStory",host); if(r) r.onclick=()=>{ S.story[sid]={n:0,ans:{}}; renderStory(m,host) };
+    const r=$("#reStory",host); if(r) r.onclick=()=>{ S.story[sid]={n:0,ans:{}}; renderStory(m,host,which) };
   }
   // quando a pausa atual foi respondida, o botão "Continuar a história" avança
   draw();
@@ -520,7 +520,7 @@ function viewBatista(v){
     <div class="chat" id="chat" aria-live="polite">${chat.length?chat.map(m=>`<div class="msg ${m.role==="user"?"u":"a"}">${esc(m.content)}${m.role!=="user"&&m.content!=="Pensando…"?`<div>${sayBtn(m.content,"Ouvir",true)}</div>`:""}</div>`).join(""):`<div class="msg a">Oi${firstName()?", "+esc(firstName()):""}! Eu sou o Batista. Pergunte o que quiser sobre fungos: da orelha-de-pau do quintal ao fungo que faz chover na Amazônia.</div>`}</div>
     <div class="chips">${sugg.map(s=>`<button class="chip" data-q="${esc(s)}">${esc(s)}</button>`).join("")}</div>
     <form class="ask" id="af"><label for="aq" class="sr">Sua pergunta</label><input type="text" id="aq" placeholder="Escreva sua pergunta" maxlength="300" autocomplete="off"><button class="btn" ${aiBusy?"disabled":""}>Enviar</button></form>
-    <p class="note">Respondo com uma base de perguntas sobre fungos que funciona até sem internet. Se eu não souber, anote a dúvida no lapbook e leve para a professora.</p></div>`;
+    <p class="note">Respondo com uma base de perguntas sobre fungos que funciona até sem internet. Se eu não souber, anote a dúvida no caderno e leve para a professora.</p></div>`;
   $("#bio",v).onclick=()=>{showBio=!showBio; viewBatista(v)};
   $("#af",v).onsubmit=e=>{e.preventDefault(); const q=$("#aq",v).value.trim(); if(q) askBatista(q)};
   $$("[data-q]",v).forEach(b=>b.onclick=()=>askBatista(b.dataset.q));
@@ -529,7 +529,7 @@ function askBatista(q){
   if(aiBusy) return;
   chat.push({role:"user",content:q});
   const a=offlineAnswer(q);
-  chat.push({role:"assistant",content:a||"Ainda não sei responder essa. Tente perguntar de outro jeito, use as sugestões acima ou anote a dúvida no bolso de perguntas do lapbook para a professora."});
+  chat.push({role:"assistant",content:a||"Ainda não sei responder essa. Tente perguntar de outro jeito, use as sugestões acima ou anote a dúvida no caderno para perguntar à professora."});
   renderBat();
 }
 function renderBat(){ if(tab==="batista"&&!sheets.length){ renderTab(); const v=$("#view"); v.scrollTop=v.scrollHeight; const i=$("#aq"); i&&i.focus() } }
@@ -675,7 +675,7 @@ function openAbout(){
   const sh=openSheet({title:"Sobre o aplicativo"});
   sh.body.innerHTML=`<div class="stack">
     <div class="cover"><div class="scene">${amazonScene()}</div><div class="ttl"><b>MICOVERSO AMAZÔNICO</b><span>Versão 2.2 · Fungos da nossa floresta</span></div></div>
-    <div class="box"><p>Produto educacional da pesquisa de mestrado “Ensino de Micologia na Educação Básica: Desenvolvimento e Validação de um Artefato Pedagógico Digital Interativo Baseado em Inteligência Artificial sobre a Biodiversidade Fúngica Amazônica” (PPGEECA/UEPA).</p><p style="margin-top:8px"><b>Autora:</b> Jéssica Batista de Assunção<br><b>Orientador:</b> Prof. Dr. Alcindo da Silva Martins Junior</p><p style="margin-top:8px"><b>Público:</b> 1º ano do Ensino Médio · E.E.E.M. Salomão Matos, Salvaterra, Marajó (PA).</p><p class="note" style="margin-top:8px">Usado junto com o lapbook físico, em 6 encontros.</p></div>
+    <div class="box"><p>Produto educacional da pesquisa de mestrado “Ensino de Micologia na Educação Básica: Desenvolvimento e Validação de um Artefato Pedagógico Digital Interativo Baseado em Inteligência Artificial sobre a Biodiversidade Fúngica Amazônica” (PPGEECA/UEPA).</p><p style="margin-top:8px"><b>Autora:</b> Jéssica Batista de Assunção<br><b>Orientador:</b> Prof. Dr. Alcindo da Silva Martins Junior</p><p style="margin-top:8px"><b>Público:</b> 1º ano do Ensino Médio · E.E.E.M. Salomão Matos, Salvaterra, Marajó (PA).</p><p class="note" style="margin-top:8px">Sequência didática em 6 encontros.</p></div>
     <div class="box"><p class="eyebrow" style="margin-bottom:4px">Créditos</p><p class="note">Fotos da Micoteca: iNaturalist e seus autores, com crédito em cada ficha. Tradução em Libras: VLibras (Governo Federal). Personagens e história: criação original para este aplicativo.</p></div></div>`;
 }
 
@@ -683,7 +683,7 @@ function openAbout(){
 function openHistorias(){
   const sh=openSheet({title:"Histórias da floresta",sub:"A saga de Iara em 6 capítulos"});
   sh.body.innerHTML=`<div class="stack"><p class="lead">Iara, estudante do 1º ano em Salvaterra, descobre o mundo dos fungos com a avó, o primo Kauã e a turma. Cada capítulo tem pausas para pensar.</p>${MISSIONS.map((m,i)=>{const r=S.story[m.id]; const done=r&&r.n>=m.story.segs.length; return `<button class="box cont" data-h="${m.id}"><div class="art">${art(m.story.art)}</div><div style="min-width:0"><p class="eyebrow">Capítulo ${i+1}${done?" · lido":""}</p><h3 style="font-size:1.1rem">${esc(m.story.title)}</h3></div></button>`}).join("")}</div>`;
-  $$("[data-h]",sh.body).forEach(b=>b.onclick=()=>{ const m=MISSIONS.find(x=>x.id===b.dataset.h); const s2=openSheet({title:m.story.title,sub:"Capítulo "+(MISSIONS.indexOf(m)+1)}); renderStory(m,s2.body) });
+  $$("[data-h]",sh.body).forEach(b=>b.onclick=()=>{ const m=MISSIONS.find(x=>x.id===b.dataset.h); const s2=openSheet({title:m.story.title,sub:"Capítulo "+(MISSIONS.indexOf(m)+1)}); s2.body.innerHTML=`<div class="stack"><div id="hs1"></div><div><p class="eyebrow">A história continua</p><h2 style="font-size:1.4rem">${esc(m.epi.title)}</h2></div><div id="hs2"></div></div>`; renderStory(m,$("#hs1",s2.body),"story"); renderStory(m,$("#hs2",s2.body),"epi") });
   sh.refresh=()=>{};
 }
 function openTimeline(){
@@ -830,7 +830,7 @@ function showSplash(){
     el.innerHTML=`<div class="head"><svg class="stars" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><circle cx="30" cy="40" r="1.2" fill="#FFF4CF" opacity="0.8"/><circle cx="80" cy="90" r="0.8" fill="#FFF4CF" opacity="0.6"/><circle cx="140" cy="30" r="1" fill="#FFF4CF" opacity="0.7"/><circle cx="250" cy="60" r="1.3" fill="#FFF4CF" opacity="0.8"/><circle cx="320" cy="25" r="0.9" fill="#FFF4CF" opacity="0.6"/><circle cx="360" cy="100" r="1.1" fill="#FFF4CF" opacity="0.7"/><circle cx="200" cy="120" r="0.7" fill="#FFF4CF" opacity="0.5"/><circle cx="60" cy="150" r="0.9" fill="#FFF4CF" opacity="0.6"/><circle cx="300" cy="160" r="0.8" fill="#FFF4CF" opacity="0.5"/></svg><h1>MICOVERSO<span>AMAZÔNICO</span></h1><p>Os fungos da nossa floresta</p></div><div class="scene">${amazonScene()}</div><div class="foot"><button class="btn" type="button">Entrar</button></div>`;
     document.body.appendChild(el);
     let done=false; const end=()=>{ if(done) return; done=true; el.classList.add("out"); setTimeout(()=>{el.remove(); res()},S.settings.motion?400:0) };
-    el.onclick=end; setTimeout(end,2600); setTimeout(()=>{const b=$(".btn",el); b&&b.focus()},50);
+    $(".btn",el).onclick=end; setTimeout(()=>{const b=$(".btn",el); b&&b.focus()},50);
   });
 }
 
