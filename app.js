@@ -1,6 +1,6 @@
 /* MICOVERSO AMAZÔNICO 2.0 — lógica */
 "use strict";
-const CFG = Object.assign({firebase:null, aiProxyUrl:""}, window.MICOVERSO_CONFIG||{});
+const CFG = Object.assign({firebase:null}, window.MICOVERSO_CONFIG||{});
 const $ = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -21,9 +21,9 @@ const ICON = {
 
 /* ============ ESTADO ============ */
 const KEYS="micoverso.v2";
-const DEF = ()=>({profile:null, settings:{fs:1,contrast:false,font:"base",spacing:false,motion:true,theme:"system",voice:"",rate:1,libras:false}, done:{}, ex:{}, story:{}, open:{}, diary:{}, maps:{inicial:[],final:[]}, aiKey:""});
+const DEF = ()=>({profile:null, settings:{fs:1,contrast:false,font:"base",spacing:false,motion:true,theme:"system",voice:"",rate:1,libras:false}, done:{}, ex:{}, story:{}, open:{}, diary:{}, maps:{inicial:[],final:[]}});
 let S = DEF();
-try{const raw=localStorage.getItem(KEYS); if(raw){const p=JSON.parse(raw); S=Object.assign(DEF(),p); S.settings=Object.assign(DEF().settings,p.settings||{});}}catch(e){}
+try{const raw=localStorage.getItem(KEYS); if(raw){const p=JSON.parse(raw); S=Object.assign(DEF(),p); S.settings=Object.assign(DEF().settings,p.settings||{}); if(S.profile) delete S.profile.email;}}catch(e){}
 function save(){try{localStorage.setItem(KEYS,JSON.stringify(S))}catch(e){toast("Não foi possível salvar neste aparelho.")}}
 function applySettings(){
   const r=document.documentElement, st=S.settings;
@@ -133,8 +133,9 @@ function openSheet({title,sub="",onClose}={}){
 function popSheet(){ const s=sheets.pop(); if(!s) return; TTS.stop(); s.el.remove(); s.onClose&&s.onClose(); const top=sheets[sheets.length-1]; if(top&&top.refresh) top.refresh(); if(!top) renderTab() }
 let afterPop=null;
 function closeThen(fn){ afterPop=fn; history.back() }
-window.addEventListener("popstate",()=>{ if(sheets.length) popSheet(); if(afterPop){ const f=afterPop; afterPop=null; setTimeout(f,0) } });
-document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&sheets.length) history.back() });
+let bulkPop=null;
+window.addEventListener("popstate",()=>{ if(bulkPop){ const f=bulkPop; bulkPop=null; setTimeout(f,0); return } if(Drawer.open){ Drawer.close(true); return } if(sheets.length) popSheet(); if(afterPop){ const f=afterPop; afterPop=null; setTimeout(f,0) } });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&(sheets.length||Drawer.open)) history.back() });
 
 let tab="inicio";
 function setTab(t){ tab=t; TTS.stop(); $$("#tabs button").forEach(b=>b.setAttribute("aria-current",b.dataset.tab===t?"page":"false")); const v=$("#view"); v.scrollTop=0; renderTab(); }
@@ -460,8 +461,6 @@ function openFungarioView(r){
       <div><h2 style="font-size:1.5rem">${esc(r.name||"Fungo sem nome")}</h2><p class="note">${esc(r.local||"Local não informado")}${r.data?" · "+esc(new Date(r.data+"T12:00").toLocaleDateString("pt-BR")):""}${r.substrato?" · "+esc(r.substrato):""}</p></div>
       <div><p class="eyebrow" style="margin-bottom:8px">Classificação taxonômica</p><div class="taxo">${L.map((l,k)=>`<div class="k">${l}</div><div class="v">${vals[k]?(k>=5?`<i>${esc(vals[k])}</i>`:esc(vals[k])):'<span class="note">—</span>'}</div>`).join("")}</div></div>
       ${r.notas?`<div class="box"><p class="eyebrow" style="margin-bottom:4px">Observações</p><p>${esc(r.notas)}</p></div>`:""}
-      <div class="box stack" style="gap:8px"><p class="eyebrow">Sugestão do Batista (IA)</p>${r.ai?`<p style="white-space:pre-wrap">${esc(r.ai)}</p>`:""}
-        ${AI.available()?`<button class="btn ghost" id="aiId">${r.ai?"Pedir nova sugestão":"Pedir sugestão de identificação"}</button><p class="note">A IA analisa a foto e sugere um grupo provável. Não substitui a identificação por especialista.</p>`:`<p class="note">A sugestão por IA aparece quando o assistente com IA estiver ativado pela professora.</p>`}</div>
       <div class="row"><button class="btn" id="edit">Editar</button>${confirming?"":`<button class="btn ghost" id="del">Excluir</button>`}</div>
       ${confirming?`<div class="confirm"><p><b>Excluir este registro?</b> A foto e as informações serão apagadas deste aparelho.</p><div class="row"><button class="btn danger" id="yes">Excluir</button><button class="btn ghost" id="no">Cancelar</button></div></div>`:""}</div>`;
     $("#vimg",sh.body).src=objURL(r.blob);
@@ -469,11 +468,6 @@ function openFungarioView(r){
     const d=$("#del",sh.body); if(d) d.onclick=()=>{confirming=true; draw()};
     const y=$("#yes",sh.body); if(y) y.onclick=async()=>{ await DB.del(r.id).catch(()=>{}); fgCount=Math.max(0,fgCount-1); toast("Registro excluído"); history.back() };
     const n=$("#no",sh.body); if(n) n.onclick=()=>{confirming=false; draw()};
-    const a=$("#aiId",sh.body); if(a) a.onclick=async()=>{ a.disabled=true; a.textContent="Analisando a foto…";
-      try{ const b64=await blobToB64(await resizeImage(r.blob,800,.8));
-        const txt=await AI.ask([{role:"user",content:[{type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},{type:"text",text:`Foto tirada por um estudante do 1º ano do Ensino Médio na Amazônia (Marajó, PA). Local: ${r.local||"não informado"}. Substrato: ${r.substrato||"não informado"}. Observações: ${r.notas||"nenhuma"}. Sugira o grupo mais provável (filo, classe, ordem e, se possível, gênero), explique quais características visíveis levam a isso e diga o que observar para confirmar. Seja honesto sobre a incerteza. Lembre que não se deve consumir cogumelos silvestres. Máximo 130 palavras, sem markdown.`}]}]);
-        r.ai=txt; await DB.put(r); draw();
-      }catch(e){ a.disabled=false; a.textContent="Tentar de novo"; toast(e.message||"Não foi possível consultar a IA agora.") } };
   }
   draw();
 }
@@ -505,24 +499,6 @@ function keyView(h,onApply){
 }
 
 /* ============ BATISTA (assistente) ============ */
-const SYS="Você é Batista, assistente do aplicativo educacional MICOVERSO AMAZÔNICO, batizado em homenagem ao micólogo brasileiro Augusto Chaves Batista (1916–1967). Você conversa com estudantes do 1º ano do Ensino Médio de uma escola pública de Salvaterra, Ilha do Marajó (Pará). Responda em português do Brasil, com linguagem clara, acolhedora e cientificamente correta, em no máximo 120 palavras. Fale sobre fungos (micologia): biologia, classificação, ecologia, história da micologia, etimologia, saúde, alimentação e saberes tradicionais, relacionando com a Amazônia e o cotidiano do estudante quando fizer sentido. Explique cada termo técnico. Nunca diga que um cogumelo silvestre é seguro para comer. Não faça diagnóstico de doenças: oriente a procurar um posto de saúde. Se a pergunta fugir do tema, traga a conversa de volta aos fungos com gentileza. Se não souber, diga que não sabe. Não use markdown, listas ou emojis.";
-const AI={
-  sample:null,
-  key(){ return (S.aiKey||"").trim() },
-  available(){ return !!(this.sample||CFG.aiProxyUrl||this.key()) },
-  mode(){ return this.sample?"Claude":CFG.aiProxyUrl?"turma":this.key()?"chave":"" },
-  async ask(messages){
-    if(this.sample){ const r=await this.sample(messages.map(m=>({role:m.role,content:typeof m.content==="string"?m.content:m.content.filter(c=>c.type==="text").map(c=>c.text).join("\n")})).map((m,i)=>i===0?{role:m.role,content:SYS+"\n\n"+m.content}:m),{cache:false,modelTier:"quick"}); return r.text }
-    const body={system:SYS,messages,max_tokens:500};
-    let res;
-    if(CFG.aiProxyUrl){ res=await fetch(CFG.aiProxyUrl,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)}) }
-    else if(this.key()){ res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":this.key(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify(Object.assign({model:"claude-haiku-5-5"},body))}) }
-    else throw new Error("Assistente com IA não configurado.");
-    if(!res.ok){ if(res.status===401) throw new Error("Chave da IA inválida. Confira nas configurações da professora."); if(res.status===429) throw new Error("Muitas perguntas seguidas. Espere um pouco e tente de novo."); throw new Error("A IA não respondeu agora (erro "+res.status+"). Tente mais tarde.") }
-    const j=await res.json(); return (j.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("\n").trim()||"Não consegui formular uma resposta.";
-  }
-};
-if(window.claude&&window.claude.use){ window.claude.use("sample").then(s=>{AI.sample=s; if(tab==="batista"&&!sheets.length) renderTab()}).catch(()=>{}) }
 function offlineAnswer(q){
   const nq=norm(q); const words=nq.split(/[^a-z0-9]+/).filter(w=>w.length>2);
   if(!words.length) return null;
@@ -537,31 +513,24 @@ function offlineAnswer(q){
 }
 let chat=[], aiBusy=false, showBio=false;
 function viewBatista(v){
-  const mode=AI.mode();
   const sugg=["Por que os cogumelos aparecem depois da chuva?","De onde vem a palavra fungo?","Como as saúvas cultivam fungos?","Existe fungo que brilha?","Quem foi Augusto Chaves Batista?"];
   v.innerHTML=`<div class="stack">
-    <div class="row" style="flex-wrap:nowrap;align-items:center"><div class="portrait">${art("lupa",null,"#D3E6DE")}</div><div style="min-width:0;flex:1"><p class="eyebrow">Assistente</p><h1 style="font-size:1.45rem">Batista</h1><span class="mode ${mode?"on":""}">${mode?"IA ativada":"Modo offline"}</span></div></div>
+    <div class="row" style="flex-wrap:nowrap;align-items:center"><div class="portrait">${art("lupa",null,"#D3E6DE")}</div><div style="min-width:0;flex:1"><p class="eyebrow">Assistente</p><h1 style="font-size:1.45rem">Batista</h1></div></div>
     <div class="box"><button class="btn ghost small" id="bio" aria-expanded="${showBio}">${showBio?"Esconder":"Por que me chamo Batista?"}</button>${showBio?`<p style="margin-top:10px">Meu nome é uma homenagem a <b>Augusto Chaves Batista</b> (1916–1967), um dos maiores micólogos do Brasil. Ele publicou mais de 600 trabalhos científicos, descreveu muitos fungos tropicais e dirigiu o Instituto de Micologia da Universidade Federal de Pernambuco, em Recife. Um gênero de fungos, <i>Batistia</i>, leva o nome dele.</p>`:""}</div>
     <div class="chat" id="chat" aria-live="polite">${chat.length?chat.map(m=>`<div class="msg ${m.role==="user"?"u":"a"}">${esc(m.content)}${m.role!=="user"&&m.content!=="Pensando…"?`<div>${sayBtn(m.content,"Ouvir",true)}</div>`:""}</div>`).join(""):`<div class="msg a">Oi${firstName()?", "+esc(firstName()):""}! Eu sou o Batista. Pergunte o que quiser sobre fungos: da orelha-de-pau do quintal ao fungo que faz chover na Amazônia.</div>`}</div>
     <div class="chips">${sugg.map(s=>`<button class="chip" data-q="${esc(s)}">${esc(s)}</button>`).join("")}</div>
     <form class="ask" id="af"><label for="aq" class="sr">Sua pergunta</label><input type="text" id="aq" placeholder="Escreva sua pergunta" maxlength="300" autocomplete="off"><button class="btn" ${aiBusy?"disabled":""}>Enviar</button></form>
-    <p class="note">${mode?"As respostas são geradas por inteligência artificial e podem conter erros. Confira com a professora e com o material dos encontros.":"Sem IA ativada, respondo com uma base de perguntas sobre fungos que funciona sem internet."}</p></div>`;
+    <p class="note">Respondo com uma base de perguntas sobre fungos que funciona até sem internet. Se eu não souber, anote a dúvida no lapbook e leve para a professora.</p></div>`;
   $("#bio",v).onclick=()=>{showBio=!showBio; viewBatista(v)};
   $("#af",v).onsubmit=e=>{e.preventDefault(); const q=$("#aq",v).value.trim(); if(q) askBatista(q)};
   $$("[data-q]",v).forEach(b=>b.onclick=()=>askBatista(b.dataset.q));
 }
-async function askBatista(q){
-  if(aiBusy) return; aiBusy=true;
+function askBatista(q){
+  if(aiBusy) return;
   chat.push({role:"user",content:q});
-  if(AI.available()){
-    chat.push({role:"assistant",content:"Pensando…"}); renderBat();
-    try{ const hist=chat.slice(0,-1).slice(-8); while(hist.length&&hist[0].role!=="user") hist.shift(); chat[chat.length-1].content=await AI.ask(hist.map(m=>({role:m.role,content:m.content}))) }
-    catch(e){ const off=offlineAnswer(q); chat[chat.length-1].content=(off?off+"\n\n":"")+"("+(e.message||"A IA não respondeu agora.")+(off?" Respondi pelo modo offline.":"")+")" }
-  } else {
-    const a=offlineAnswer(q);
-    chat.push({role:"assistant",content:a||"Ainda não sei responder essa. Tente perguntar de outro jeito, use as sugestões acima ou anote a dúvida no bolso de perguntas do lapbook para a professora."});
-  }
-  aiBusy=false; renderBat();
+  const a=offlineAnswer(q);
+  chat.push({role:"assistant",content:a||"Ainda não sei responder essa. Tente perguntar de outro jeito, use as sugestões acima ou anote a dúvida no bolso de perguntas do lapbook para a professora."});
+  renderBat();
 }
 function renderBat(){ if(tab==="batista"&&!sheets.length){ renderTab(); const v=$("#view"); v.scrollTop=v.scrollHeight; const i=$("#aq"); i&&i.focus() } }
 
@@ -569,17 +538,16 @@ function renderBat(){ if(tab==="batista"&&!sheets.length){ renderTab(); const v=
 function viewPerfil(v){
   const p=S.profile||{}; const n=doneCount();
   v.innerHTML=`<div class="stack">
-    <div class="phero"><div class="big">${ring(n/6)}<div class="av">${avatarHTML(p.avatar)}</div></div><h1>${esc(p.name||"Explorador(a)")}</h1><p>${esc(p.turma||"1º ano do Ensino Médio")}${p.email?" · "+esc(p.email):""}</p>${p.provider?`<span class="tag" style="background:rgba(255,255,255,.2);color:#fff">Conectado com ${esc(p.provider)}</span>`:""}<button class="btn" id="editP" style="background:#fff;color:#1E6A5A;margin-top:4px">Editar perfil</button></div>
+    <div class="phero"><div class="big">${ring(n/6)}<div class="av">${avatarHTML(p.avatar)}</div></div><h1>${esc(p.name||"Explorador(a)")}</h1><p>${esc(p.turma||"1º ano do Ensino Médio")}</p>${p.provider?`<span class="tag" style="background:rgba(255,255,255,.2);color:#fff">Conectado com ${esc(p.provider)}</span>`:""}<button class="btn" id="editP" style="background:#fff;color:#1E6A5A;margin-top:4px">Editar perfil</button></div>
     <div class="stats"><div class="stat"><b>${n}/6</b><span>encontros concluídos</span></div><div class="stat"><b>${exCount()}</b><span>atividades respondidas</span></div><div class="stat"><b>${fgCount}</b><span>fungos no fungário</span></div><div class="stat"><b>${Object.values(S.diary).filter(x=>x&&x.trim()).length}</b><span>registros no diário</span></div></div>
     <div class="box stack" style="gap:10px"><h3 style="font-size:1.05rem">Enviar minhas respostas à professora</h3><p class="note">Junta respostas discursivas, diário de bordo, registros de experimentos e mapas conceituais num texto para enviar por WhatsApp ou e-mail.</p><button class="btn" id="share">Compartilhar meu registro</button></div>
     <div class="box"><div class="setrow"><div><b>Acessibilidade</b><p class="note">Tamanho do texto, contraste, Libras, leitura em voz alta</p></div><button class="btn ghost small" id="a11y2">Abrir</button></div>
-      <div class="setrow"><div><b>Configurações da professora</b><p class="note">Assistente com IA</p></div><button class="btn ghost small" id="teach">Abrir</button></div>
       <div class="setrow"><div><b>Sobre o aplicativo</b><p class="note">Pesquisa, autoria e créditos</p></div><button class="btn ghost small" id="about">Abrir</button></div></div>
     <button class="btn ghost" id="logout">Sair e trocar de usuário</button>
     <div id="lo"></div></div>`;
   $("#editP",v).onclick=()=>openLogin(true);
   $("#share",v).onclick=shareRegistro;
-  $("#a11y2",v).onclick=openA11y; $("#teach",v).onclick=openTeacher; $("#about",v).onclick=openAbout;
+  $("#a11y2",v).onclick=openA11y; $("#about",v).onclick=openAbout;
   $("#logout",v).onclick=()=>{ $("#lo",v).innerHTML=`<div class="confirm"><p><b>Sair deste perfil?</b> Escolha se quer manter o progresso neste aparelho.</p><div class="row"><button class="btn" id="lk">Sair e manter progresso</button><button class="btn danger" id="lx">Sair e apagar tudo</button><button class="btn ghost" id="lc">Cancelar</button></div></div>`;
     $("#lk",v).onclick=()=>{ S.profile=null; save(); Auth.signOut(); openLogin() };
     $("#lx",v).onclick=async()=>{ const st=S.settings; S=DEF(); S.settings=st; save(); try{ for(const r of await DB.all()) await DB.del(r.id) }catch(e){} fgCount=0; Auth.signOut(); openLogin() };
@@ -587,7 +555,6 @@ function viewPerfil(v){
 }
 function registroText(){
   const p=S.profile||{}; let t=`MICOVERSO AMAZÔNICO — Registro de ${p.name||"estudante"}${p.turma?" ("+p.turma+")":""}\n`;
-  if(p.email) t+=`E-mail: ${p.email}\n`;
   t+=`Encontros concluídos: ${doneCount()}/6\n`;
   MISSIONS.forEach((m,i)=>{
     const lines=[];
@@ -622,19 +589,18 @@ const Auth={
   signOut(){ if(this.fb) try{this.fb.auth().signOut()}catch(e){} }
 };
 function openLogin(editing){
-  const p=Object.assign({name:"",turma:"",email:"",avatar:"k:0"},S.profile||{});
+  const p=Object.assign({name:"",turma:"",avatar:"k:0"},S.profile||{});
   const sh=openSheet({title:editing?"Editar perfil":"Entrar no Micoverso"});
   if(!editing){ $("[data-close]",sh.el).hidden=true }
   function draw(){
     sh.body.innerHTML=`<div class="stack">
-      ${editing?"":`<div class="login-hero"><img src="icon-192.png" alt=""><h1 style="font-size:1.7rem">Bem-vindo(a) ao Micoverso</h1><p class="lead">Crie seu perfil para guardar seu progresso.</p></div>`}
+      ${editing?"":`<div class="cover"><div class="scene">${amazonScene()}</div><div class="ttl"><b>Bem-vindo(a) ao Micoverso</b><span>Crie seu perfil para guardar seu progresso.</span></div></div>`}
       ${Auth.enabled()&&!editing?`<div class="stack" style="gap:8px"><button class="prov" id="lg"><svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.2l7.8 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-16.6z"/><path fill="#FBBC05" d="M10.5 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.8-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.1-13.5-9.8l-8 6.2C6.5 42.6 14.6 48 24 48z"/></svg>Entrar com Google</button><button class="prov" id="lf"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#1877F2"/><path fill="#fff" d="M13.4 19.5v-6.3h2.1l.3-2.5h-2.4V9.2c0-.7.2-1.2 1.2-1.2h1.3V5.8c-.2 0-1-.1-1.9-.1-1.9 0-3.2 1.2-3.2 3.3v1.8H8.7v2.5h2.1v6.3z"/></svg>Entrar com Facebook</button><p class="note" id="lerr" role="alert"></p><div class="divider">ou crie um perfil neste aparelho</div></div>`:""}
       <div class="field"><label>Escolha sua foto de perfil</label><div class="avgrid" role="group" aria-label="Avatares">${AVATARS.map((a,i)=>`<button type="button" class="avbtn" data-av="k:${i}" aria-pressed="${p.avatar==="k:"+i}" aria-label="Avatar ${i+1}">${art(a[0],a[1],a[2])}</button>`).join("")}${p.avatar.startsWith("img:")?`<button type="button" class="avbtn" data-av="${esc(p.avatar)}" aria-pressed="true" aria-label="Sua foto"><img src="${esc(p.avatar.slice(4))}" alt=""></button>`:""}</div>
         <div class="row" style="margin-top:10px"><label class="btn ghost small" for="avf" style="margin:0">${ICON.cam}Usar uma foto minha</label><input type="file" id="avf" accept="image/*" class="sr"></div></div>
       <form class="stack" id="lform" novalidate>
         <div class="field"><label for="ln">Nome ou apelido</label><input type="text" id="ln" value="${esc(p.name)}" maxlength="40" autocomplete="nickname" required></div>
         <div class="field"><label for="lt">Turma</label><input type="text" id="lt" value="${esc(p.turma)}" maxlength="30" placeholder="ex.: 1º ano A"></div>
-        <div class="field"><label for="le">E-mail (opcional)</label><input type="email" id="le" value="${esc(p.email)}" maxlength="80" autocomplete="email" placeholder="seuemail@exemplo.com"></div>
         <p class="note" id="lmsg" role="alert"></p>
         <button class="btn" type="submit">${editing?"Salvar perfil":"Entrar"}</button>
       </form>
@@ -642,14 +608,13 @@ function openLogin(editing){
       <p class="note">Seus dados ficam salvos apenas neste aparelho${Auth.enabled()?", exceto quando você entra com Google ou Facebook":""}.</p></div>`;
     $$(".avbtn",sh.body).forEach(b=>b.onclick=()=>{p.avatar=b.dataset.av; $$(".avbtn",sh.body).forEach(x=>x.setAttribute("aria-pressed",String(x===b)))});
     $("#avf",sh.body).onchange=async e=>{ const f=e.target.files&&e.target.files[0]; if(!f) return; try{ const b=await resizeImage(f,256,.8); p.avatar="img:"+await new Promise(r=>{const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(b)}); keep(); draw() }catch(err){ $("#lmsg",sh.body).textContent="Não foi possível usar essa imagem." } };
-    const keep=()=>{ p.name=$("#ln",sh.body).value; p.turma=$("#lt",sh.body).value; p.email=$("#le",sh.body).value };
-    $("#lform",sh.body).onsubmit=e=>{ e.preventDefault(); keep(); p.name=p.name.trim(); p.email=p.email.trim();
+    const keep=()=>{ p.name=$("#ln",sh.body).value; p.turma=$("#lt",sh.body).value };
+    $("#lform",sh.body).onsubmit=e=>{ e.preventDefault(); keep(); p.name=p.name.trim(); p.turma=p.turma.trim();
       if(!p.name){ $("#lmsg",sh.body).textContent="Escreva seu nome ou apelido."; $("#ln",sh.body).focus(); return }
-      if(p.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email)){ $("#lmsg",sh.body).textContent="Confira o e-mail: ele parece incompleto."; $("#le",sh.body).focus(); return }
       S.profile=Object.assign({},S.profile||{},p); save(); toast(editing?"Perfil salvo":"Bem-vindo(a), "+firstName()+"!"); history.back() };
-    const g=$("#guest",sh.body); if(g) g.onclick=()=>{ S.profile={name:"Explorador(a)",turma:"",email:"",avatar:p.avatar,guest:true}; save(); history.back() };
+    const g=$("#guest",sh.body); if(g) g.onclick=()=>{ S.profile={name:"Explorador(a)",turma:"",avatar:p.avatar,guest:true}; save(); history.back() };
     const lg=$("#lg",sh.body), lf=$("#lf",sh.body);
-    const go=kind=>async()=>{ try{ const u=await Auth.signIn(kind); if(u){ S.profile={name:u.displayName||"Estudante",email:u.email||"",turma:p.turma||"",avatar:u.photoURL?"img:"+u.photoURL:p.avatar,provider:kind==="google"?"Google":"Facebook",uid:u.uid}; save(); history.back() } }catch(err){ $("#lerr",sh.body).textContent="Não foi possível entrar agora. Tente de novo ou crie um perfil neste aparelho." } };
+    const go=kind=>async()=>{ try{ const u=await Auth.signIn(kind); if(u){ S.profile={name:u.displayName||"Estudante",turma:p.turma||"",avatar:u.photoURL?"img:"+u.photoURL:p.avatar,provider:kind==="google"?"Google":"Facebook",uid:u.uid}; save(); history.back() } }catch(err){ $("#lerr",sh.body).textContent="Não foi possível entrar agora. Tente de novo ou crie um perfil neste aparelho." } };
     if(lg) lg.onclick=go("google"); if(lf) lf.onclick=go("facebook");
   }
   draw();
@@ -693,30 +658,23 @@ function openA11y(){
 const Libras={
   loaded:false,
   load(){ const w=$("[vw]"); if(w){ w.hidden=false; return } if(this.loaded) return; this.loaded=true;
-    const d=document.createElement("div"); d.setAttribute("vw",""); d.className="enabled"; d.innerHTML='<div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div>'; document.body.appendChild(d);
+    const d=document.createElement("div"); d.setAttribute("vw",""); d.className="enabled"; d.innerHTML='<div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div>'; document.body.appendChild(d); this.watch();
     const s=document.createElement("script"); s.src="https://vlibras.gov.br/app/vlibras-plugin.js"; s.onload=()=>{ try{ new window.VLibras.Widget("https://vlibras.gov.br/app"); if(document.readyState==="complete") window.dispatchEvent(new Event("load")) }catch(e){} }; s.onerror=()=>{ this.loaded=false; d.remove(); toast("Não foi possível carregar o VLibras. Verifique a internet.") }; document.body.appendChild(s) },
-  hide(){ const w=$("[vw]"); if(w) w.hidden=true }
+  hide(){ const w=$("[vw]"); if(w) w.hidden=true; this.sync(false) },
+  btn:null, obs:null,
+  watch(){ const wr=$("[vw-plugin-wrapper]"); if(!wr) return; if(!this.obs){ this.obs=new MutationObserver(()=>this.sync()); this.obs.observe(wr,{attributes:true,attributeFilter:["class"]}) } this.sync() },
+  sync(force){ const wr=$("[vw-plugin-wrapper]"); const open=force===false?false:!!(wr&&wr.classList.contains("active"));
+    if(!this.btn){ const b=document.createElement("button"); b.className="librasx"; b.type="button"; b.innerHTML=ICON.close+"<span>Fechar Libras</span>"; b.setAttribute("aria-label","Fechar a janela do VLibras"); b.onclick=()=>this.close(); document.body.appendChild(b); this.btn=b }
+    this.btn.hidden=!open },
+  close(){ const wr=$("[vw-plugin-wrapper]"), ab=$("[vw-access-button]"); if(wr) wr.classList.remove("active"); if(ab) ab.classList.add("active"); this.sync(false); announce("Janela do VLibras fechada") }
 };
 
+
 /* ---------- Professora / Sobre ---------- */
-function openTeacher(){
-  const sh=openSheet({title:"Configurações da professora"});
-  sh.body.innerHTML=`<div class="stack">
-    <div class="box stack" style="gap:8px"><h3 style="font-size:1.05rem">Assistente Batista com IA</h3>
-      <p>Situação: <b>${CFG.aiProxyUrl?"IA ativada para toda a turma (servidor configurado)":S.aiKey?"IA ativada só neste aparelho (chave)":"Modo offline"}</b></p>
-      <p class="note">Para ativar a IA para todos os alunos sem expor senhas, configure o servidor gratuito descrito no arquivo LEIA-ME, no pacote do aplicativo. Para usar só no seu aparelho (por exemplo, projetando na sala), cole abaixo uma chave da API da Anthropic.</p>
-      <div class="field"><label for="akey">Chave da API (fica salva só neste aparelho)</label><input type="password" id="akey" value="${esc(S.aiKey||"")}" autocomplete="off" placeholder="sk-ant-..."></div>
-      <div class="row"><button class="btn" id="ksave">Salvar</button><button class="btn ghost" id="ktest">Testar</button>${S.aiKey?`<button class="btn ghost" id="kdel">Remover chave</button>`:""}</div>
-      <p class="note" id="kmsg" role="status"></p>
-      <div class="warnbox"><b>Atenção:</b> não salve sua chave no celular dos alunos. O uso da API é cobrado pela Anthropic.</div></div></div>`;
-  $("#ksave",sh.body).onclick=()=>{ S.aiKey=$("#akey",sh.body).value.trim(); save(); $("#kmsg",sh.body).textContent=S.aiKey?"Chave salva neste aparelho.":"Chave removida." };
-  $("#ktest",sh.body).onclick=async()=>{ S.aiKey=$("#akey",sh.body).value.trim(); save(); const m=$("#kmsg",sh.body); m.textContent="Testando…"; try{ const t=await AI.ask([{role:"user",content:"Diga em uma frase o que é um fungo."}]); m.textContent="Funcionou: "+t }catch(e){ m.textContent=e.message } };
-  const kd=$("#kdel",sh.body); if(kd) kd.onclick=()=>{ S.aiKey=""; save(); history.back() };
-}
 function openAbout(){
   const sh=openSheet({title:"Sobre o aplicativo"});
   sh.body.innerHTML=`<div class="stack">
-    <div class="login-hero"><img src="icon-192.png" alt=""><h2 style="font-size:1.5rem">MICOVERSO AMAZÔNICO</h2><p class="lead">Versão 2.0</p></div>
+    <div class="cover"><div class="scene">${amazonScene()}</div><div class="ttl"><b>MICOVERSO AMAZÔNICO</b><span>Versão 2.2 · Fungos da nossa floresta</span></div></div>
     <div class="box"><p>Produto educacional da pesquisa de mestrado “Ensino de Micologia na Educação Básica: Desenvolvimento e Validação de um Artefato Pedagógico Digital Interativo Baseado em Inteligência Artificial sobre a Biodiversidade Fúngica Amazônica” (PPGEECA/UEPA).</p><p style="margin-top:8px"><b>Autora:</b> Jéssica Batista de Assunção<br><b>Orientador:</b> Prof. Dr. Alcindo da Silva Martins Junior</p><p style="margin-top:8px"><b>Público:</b> 1º ano do Ensino Médio · E.E.E.M. Salomão Matos, Salvaterra, Marajó (PA).</p><p class="note" style="margin-top:8px">Usado junto com o lapbook físico, em 6 encontros.</p></div>
     <div class="box"><p class="eyebrow" style="margin-bottom:4px">Créditos</p><p class="note">Fotos da Micoteca: iNaturalist e seus autores, com crédito em cada ficha. Tradução em Libras: VLibras (Governo Federal). Personagens e história: criação original para este aplicativo.</p></div></div>`;
 }
@@ -795,13 +753,95 @@ function mapSvg(L){
   return `<div class="mapwrap"><svg viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="Desenho do mapa conceitual com ${n} conceitos" style="display:block;max-width:none;min-width:100%" font-family="Atkinson Hyperlegible, sans-serif"><defs><marker id="ar" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>${edges}${ns}</svg></div>`;
 }
 
+/* ============ MENU LATERAL ============ */
+const DI={
+ home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
+ trail:'<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8 17c6 0 2-9 8-10" stroke-dasharray="2 2.5"/>',
+ mush:'<path d="M3 12a9 6 0 0 1 18 0z"/><path d="M10 12v6a2 2 0 0 0 4 0v-6"/>',
+ cam:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+ key:'<circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L20 20"/>',
+ chat:'<path d="M4 5h16v11H9l-5 4z"/>',
+ book:'<path d="M4 5h6a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h6z"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ abc:'<path d="M4 18l4-12 4 12M5.5 14h5M15 6h3a2.5 2.5 0 0 1 0 5h-3zm0 5h3.5a2.5 2.5 0 0 1 0 5H15z"/>',
+ list:'<path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>',
+ map:'<rect x="3" y="3" width="7" height="5" rx="1"/><rect x="14" y="16" width="7" height="5" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><path d="M10 5.5h4M17.5 8v8"/>',
+ user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
+ a11y:'<circle cx="12" cy="4.5" r="1.8"/><path d="M5 8.5l7 1.5 7-1.5M12 10v4.5M12 14.5l-3.5 6M12 14.5l3.5 6"/>',
+ hand:'<path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11m0-1V4.5a1.5 1.5 0 0 1 3 0V11m0-5.5a1.5 1.5 0 0 1 3 0V13c0 4-2.5 7-6 7-2.5 0-4-1.5-5.5-4L4 13a1.5 1.5 0 0 1 2.5-1.5L8 13"/>',
+ share:'<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>',
+ gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+ info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>'
+};
+const Drawer={
+  open:false, el:null,
+  show(){
+    if(this.open) return; TTS.stop(); this.open=true;
+    const p=S.profile||{}; const cur=sheets.length?"":tab;
+    const it=(id,ic,label,on)=>`<button class="dr-item" data-d="${id}" ${on?'aria-current="page"':""}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${DI[ic]}</svg><span>${label}</span></button>`;
+    const w=document.createElement("div");
+    w.innerHTML=`<div class="scrim" data-d="x"></div><nav class="drawer" id="drawer" aria-label="Menu" role="dialog" aria-modal="true">
+      <div class="dr-head"><div class="scene">${amazonScene()}</div><button class="dr-close" data-d="x" aria-label="Fechar menu">${ICON.close}</button>
+        <button class="who" data-d="perfil"><div class="av">${avatarHTML(p.avatar)}</div><div style="min-width:0"><b>${esc(p.name||"Explorador(a)")}</b><span>${esc(p.turma||"Ver meu perfil")}</span></div></button></div>
+      <div class="dr-list">
+        <p class="dr-sec">Navegar</p>
+        ${it("inicio","home","Início",cur==="inicio")}${it("encontros","trail","Encontros",cur==="encontros")}${it("micoteca","mush","Micoteca",cur==="micoteca")}${it("fungario","cam","Meu fungário")}${it("chave","key","Chave de identificação")}${it("batista","chat","Batista, o assistente",cur==="batista")}
+        <p class="dr-sec">Aprender mais</p>
+        ${it("historias","book","Histórias da floresta")}${it("tempo","clock","Linha do tempo")}${it("palavras","abc","De onde vêm as palavras")}${it("revisao","list","Atividades de fixação")}${it("mapa","map","Mapa conceitual")}
+        <p class="dr-sec">Minha conta</p>
+        ${it("perfil","user","Meu perfil",cur==="perfil")}${it("share","share","Enviar respostas à professora")}${it("a11y","a11y","Acessibilidade")}${it("libras","hand",S.settings.libras?"Desligar Libras (VLibras)":"Ligar Libras (VLibras)")}
+        <p class="dr-sec">Sobre</p>
+        ${it("about","info","Sobre o aplicativo")}
+      </div></nav>`;
+    document.body.appendChild(w); this.el=w; $("#menuBtn").setAttribute("aria-expanded","true");
+    try{history.pushState({drawer:1},"")}catch(e){}
+    $$("[data-d]",w).forEach(b=>b.onclick=()=>this.go(b.dataset.d));
+    setTimeout(()=>{const f=$(".dr-close",w); f&&f.focus()},30);
+  },
+  close(fromPop){ if(!this.open) return; this.open=false; this.el&&this.el.remove(); this.el=null; $("#menuBtn").setAttribute("aria-expanded","false"); if(!fromPop) history.back() },
+  go(d){
+    const act={
+      x:null,
+      inicio:()=>setTab("inicio"), encontros:()=>setTab("encontros"), micoteca:()=>{micoMode="catalogo";setTab("micoteca")}, batista:()=>setTab("batista"), perfil:()=>setTab("perfil"),
+      fungario:()=>{micoMode="fungario";setTab("micoteca")}, chave:()=>{micoMode="chave";setTab("micoteca")},
+      historias:openHistorias, tempo:openTimeline, palavras:openPalavras, revisao:openRevisao, mapa:openMapa,
+      share:shareRegistro, a11y:openA11y, about:openAbout,
+      libras:()=>{ S.settings.libras=!S.settings.libras; save(); if(S.settings.libras){Libras.load(); toast("VLibras ativado: toque no botão azul de Libras na lateral da tela")} else {Libras.hide(); toast("VLibras desligado")} }
+    }[d];
+    const tabAct=["inicio","encontros","micoteca","batista","perfil","fungario","chave"].includes(d);
+    closeAll(()=>{ act&&act(); if(!act) $("#menuBtn").focus() }, tabAct);
+  }
+};
+function closeAll(then,alsoSheets){
+  let n=0;
+  if(Drawer.open){ Drawer.open=false; Drawer.el&&Drawer.el.remove(); Drawer.el=null; $("#menuBtn").setAttribute("aria-expanded","false"); n++ }
+  if(alsoSheets) while(sheets.length){ const sh=sheets.pop(); sh.el.remove(); sh.onClose&&sh.onClose(); n++ }
+  TTS.stop();
+  if(!n){ then&&then(); return }
+  bulkPop=()=>{ if(alsoSheets&&!then) renderTab(); then&&then() };
+  history.go(-n);
+}
+$("#menuBtn").onclick=()=>Drawer.show();
+
+/* ============ CAPA DE ABERTURA ============ */
+function showSplash(){
+  return new Promise(res=>{
+    const el=document.createElement("div"); el.className="splash"; el.setAttribute("role","dialog"); el.setAttribute("aria-label","Micoverso Amazônico");
+    el.innerHTML=`<div class="head"><svg class="stars" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><circle cx="30" cy="40" r="1.2" fill="#FFF4CF" opacity="0.8"/><circle cx="80" cy="90" r="0.8" fill="#FFF4CF" opacity="0.6"/><circle cx="140" cy="30" r="1" fill="#FFF4CF" opacity="0.7"/><circle cx="250" cy="60" r="1.3" fill="#FFF4CF" opacity="0.8"/><circle cx="320" cy="25" r="0.9" fill="#FFF4CF" opacity="0.6"/><circle cx="360" cy="100" r="1.1" fill="#FFF4CF" opacity="0.7"/><circle cx="200" cy="120" r="0.7" fill="#FFF4CF" opacity="0.5"/><circle cx="60" cy="150" r="0.9" fill="#FFF4CF" opacity="0.6"/><circle cx="300" cy="160" r="0.8" fill="#FFF4CF" opacity="0.5"/></svg><h1>MICOVERSO<span>AMAZÔNICO</span></h1><p>Os fungos da nossa floresta</p></div><div class="scene">${amazonScene()}</div><div class="foot"><button class="btn" type="button">Entrar</button></div>`;
+    document.body.appendChild(el);
+    let done=false; const end=()=>{ if(done) return; done=true; el.classList.add("out"); setTimeout(()=>{el.remove(); res()},S.settings.motion?400:0) };
+    el.onclick=end; setTimeout(end,2600); setTimeout(()=>{const b=$(".btn",el); b&&b.focus()},50);
+  });
+}
+
 /* ============ INÍCIO DO APP ============ */
 (async function boot(){
   setTab("inicio");
+  await showSplash();
   if(S.settings.libras) Libras.load();
   if(!S.profile){
     const u=await Auth.redirectResult();
-    if(u){ S.profile={name:u.displayName||"Estudante",email:u.email||"",turma:"",avatar:u.photoURL?"img:"+u.photoURL:"k:0",provider:"Google ou Facebook",uid:u.uid}; save(); renderTab() }
+    if(u){ S.profile={name:u.displayName||"Estudante",turma:"",avatar:u.photoURL?"img:"+u.photoURL:"k:0",provider:"Google ou Facebook",uid:u.uid}; save(); renderTab() }
     else openLogin();
   }
   if("serviceWorker" in navigator && location.protocol==="https:") window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
